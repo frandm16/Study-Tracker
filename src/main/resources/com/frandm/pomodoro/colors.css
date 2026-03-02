@@ -1,13 +1,11 @@
 .root {
-    -color-work: #ec7b6d;
-    -color-break: #27AE60;
-    -color-long-break: #2980B9;
+
     -icon-red : #ff7a00;
 }
 
 .primer-dark {
-    -color-bg-default: #0d1117;
-    -color-fg-default: #ffffff;
+    -color-bg-default: #1f2f50;
+    -color-fg-default: #eaeaea;
     -color-fg-muted: #94a3b8;
     -color-bg-subtle: #161b22;
     -color-accent: #a855f7;
@@ -20,7 +18,7 @@
     -text-muted: -color-fg-muted;
     -stat-card-normal-bg: rgba(46, 74, 255, 0.1);
     -stat-card-red-bg: rgba(255, 57, 22, 0.1);
-    -stat-card-secundary-bg: rgba(85, 85, 85, 0.07);
+    -stat-card-secundary-bg: rgba(32, 38, 58, 0.1);
 
     -heatmap-empty: rgba(48, 54, 61, 0.5);
     -heatmap-very-low: rgba(168, 85, 247, 0.2);
@@ -29,10 +27,17 @@
     -heatmap-high: #a855f7;
     -heatmap-very-high: #bc7af9;
     -heatmap-extreme: #d8b4fe;
+
+    -color-work: #0f2a29;
+    -color-work-secundary: #7aefa7;
+    -color-break: #132246;
+    -color-break-secundary: #8dc3fd;
+    -color-long-break: #1a1e43;
+    -color-long-break-secundary: #a2b2fd;
 }
 
 .primer-light {
-    -color-bg-default: #ffffff;
+    -color-bg-default: #fdfdfd;
     -color-fg-default: #1e293b;
     -color-fg-muted: #6e7781;
     -color-bg-subtle: #f6f8fa;
@@ -44,9 +49,9 @@
     -text-main: -color-fg-default;
     -text-dark: #24292f;
     -text-muted: -color-fg-muted;
-    -stat-card-normal-bg: rgb(98, 255, 46);
-    -stat-card-red-bg: rgb(22, 255, 255);
-    -stat-card-secundary-bg: rgba(85, 85, 85, 0.07);
+    -stat-card-normal-bg: rgba(46, 74, 255, 0.1);
+    -stat-card-red-bg: rgba(255, 57, 22, 0.1);
+    -stat-card-secundary-bg: rgba(205, 205, 205, 0.07);
 
     -heatmap-empty: #ebedf0;
     -heatmap-very-low: #d2a8ff;
@@ -55,4 +60,12 @@
     -heatmap-high: #8957e5;
     -heatmap-very-high: #6e40c1;
     -heatmap-extreme: #553098;
+
+
+    -color-work: #7aefa7;
+    -color-work-secundary: #175732;
+    -color-break: #8dc3fd;
+    -color-break-secundary: #192d5a;
+    -color-long-break: #a2b2fd;
+    -color-long-break-secundary: #252a61;
 }

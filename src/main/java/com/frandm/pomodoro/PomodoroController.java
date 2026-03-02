@@ -4,6 +4,7 @@ package com.frandm.pomodoro;
 import atlantafx.base.theme.PrimerDark;
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.scene.chart.*;
 import javafx.collections.ObservableList;
@@ -16,7 +17,9 @@ import javafx.animation.TranslateTransition;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Arc;
+import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -25,18 +28,18 @@ import javafx.scene.control.*;
 import javafx.scene.media.AudioClip;
 import java.net.URL;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.TreeMap;
 //endregion
 
 public class PomodoroController {
 
     public VBox streakVBox;
     public VBox streakImage;
+    public Circle circleMain;
+    public SplitMenuButton selectTagButton;
     //region @FXML
     @FXML private StackPane rootPane;
 
@@ -53,7 +56,7 @@ public class PomodoroController {
     @FXML private ToggleButton autoBreakToggle, autoPomoToggle, countBreakTime;
 
     // setup sidebar
-    @FXML private VBox setupPane;
+    @FXML private StackPane setupPane;
     @FXML private ListView<String> subjectListView;
     @FXML private ListView<String> taskListView;
     @FXML private TextField newSubjectField, newTaskField;
@@ -90,10 +93,9 @@ public class PomodoroController {
     private TranslateTransition settingsAnim;
     private TranslateTransition setupAnim;
 
-    private String selectedSubject = null;
+    private String selectedTag = null;
     private String selectedTask = null;
-    Map<LocalDateTime, String> eventosMap = new TreeMap<>();
-    private static final String DEFAULT_SUBJECT = "General";
+    private static final String DEFAULT_TAG = "";
     private final ObservableList<String> subjectsList = FXCollections.observableArrayList();
     private final ObservableList<String> tasksList = FXCollections.observableArrayList();
     private boolean isDarkMode = true;
@@ -132,14 +134,18 @@ public class PomodoroController {
 
         //region paneles
         settingsPane.setTranslateX(-600);
-        setupPane.setTranslateX(600);
         //endregion
 
         //region setup panel
-        subjectListView.setItems(subjectsList);
-        taskListView.setItems(tasksList);
-        subjectsList.addAll("Programación", "Matemáticas", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test", "test");
+        subjectsList.addAll("Programación", "Matemáticas");
         tasksList.addAll("UI FXML", "Ejercicios");
+
+        selectTagButton.setOnAction(event -> {
+            if (selectTagButton.getItems().isEmpty()) {
+                toggleSetup();
+                event.consume();
+            }
+        });
 
         //endregion
 
@@ -269,19 +275,13 @@ public class PomodoroController {
         PomodoroEngine.State current = engine.getCurrentState();
 
         if (current == PomodoroEngine.State.MENU) {
-            if (selectedSubject == null) {
-                toggleSetup();
-            } else {
                 engine.start();
-                eventosMap.put(LocalDateTime.now(), "started");
-            }
+
         } else {
             if (current == PomodoroEngine.State.WAITING) {
                 engine.start();
-                eventosMap.put(LocalDateTime.now(), "resumed");
             } else {
                 engine.pause();
-                eventosMap.put(LocalDateTime.now(), "paused");
             }
         }
         updateUIFromEngine();
@@ -292,13 +292,11 @@ public class PomodoroController {
     }
     @FXML
     private void handleFinish() {
-        String subjectToSave = (selectedSubject == null) ? DEFAULT_SUBJECT : selectedSubject;
+        String tagToSave = (selectedTag == null) ? DEFAULT_TAG : selectedTag;
         String taskToSave = (selectedTask == null) ? null : selectedTask;
         int minutes = engine.getRealMinutesElapsed();
         if(minutes > 1) {
-            eventosMap.put(LocalDateTime.now(), "finalized");
-            DatabaseHandler.saveSessionWithEvents(subjectToSave, taskToSave, null, minutes, eventosMap);
-            eventosMap.clear();
+            DatabaseHandler.saveSession(tagToSave, taskToSave, null, minutes);
         }
 
 
@@ -354,15 +352,7 @@ public class PomodoroController {
         PomodoroEngine.State logical = engine.getLogicalState();
 
         if (current == PomodoroEngine.State.MENU) {
-            if (selectedSubject == null) {
-                startPauseBtn.setText("SETUP");
-                selectedSubjectLabel.setVisible(false);
-            } else {
                 startPauseBtn.setText("START");
-                selectedSubjectLabel.setText(selectedSubject);
-                selectedSubjectLabel.setVisible(true);
-                selectedSubjectLabel.setManaged(true);
-            }
         } else {
             startPauseBtn.setText(current == PomodoroEngine.State.WAITING ? "RESUME" : "PAUSE");
         }
@@ -373,8 +363,6 @@ public class PomodoroController {
         boolean isRunning = (current != PomodoroEngine.State.WAITING && !isMenu);
         skipBtn.setVisible(isRunning);
         skipBtn.setManaged(isRunning);
-        changeSubjectBtn.setVisible(isMenu);
-        changeSubjectBtn.setManaged(isMenu);
 
         boolean hasStarted = (!isMenu);
         finishBtn.setVisible(hasStarted);
@@ -382,21 +370,33 @@ public class PomodoroController {
 
         switch (logical) {
             case WORK -> {
-                animateBackgroundTransition("-color-work");
+                animateCircleFill(circleMain, "-color-work");
                 int session = engine.getSessionCounter() + 1;
                 stateLabel.setText(String.format("Pomodoro - #%d", session));
+                stateLabel.setStyle("-fx-text-fill: -color-work-secundary;");
+                progressArc.setStyle("-fx-stroke: -color-work-secundary;");
+                timerLabel.setStyle("-fx-text-fill: -color-work-secundary;");
             }
             case SHORT_BREAK -> {
-                animateBackgroundTransition("-color-break");
+                animateCircleFill(circleMain, "-color-break");
                 stateLabel.setText("Short Break");
+                stateLabel.setStyle("-fx-text-fill: -color-break-secundary;");
+                progressArc.setStyle("-fx-stroke: -color-break-secundary;");
+                timerLabel.setStyle("-fx-text-fill: -color-break-secundary;");
             }
             case LONG_BREAK -> {
-                animateBackgroundTransition("-color-long-break");
+                animateCircleFill(circleMain, "-color-long-break");
                 stateLabel.setText("Long Break");
+                stateLabel.setStyle("-fx-stroke: -color-long-break-secundary;");
+                progressArc.setStyle("-fx-stroke: -color-long-break-secundary;");
+                timerLabel.setStyle("-fx-stroke: -color-long-break-secundary;");
             }
             case MENU -> {
-                animateBackgroundTransition("-color-menu");
+                animateCircleFill(circleMain, "-color-work");
                 stateLabel.setText("Pomodoro");
+                stateLabel.setStyle("-fx-text-fill: -color-work-secundary;");
+                progressArc.setStyle("-fx-stroke: -color-work-secundary;");
+                timerLabel.setStyle("-fx-text-fill: -color-work-secundary;");
             }
             default -> {}
         }
@@ -404,34 +404,30 @@ public class PomodoroController {
     //endregion
 
     //region Animations
-    private void animateBackgroundTransition(String cssVar) {
-        Background currentBg = rootPane.getBackground();
-        Color start = (currentBg != null && !currentBg.getFills().isEmpty())
-                ? (Color) currentBg.getFills().getFirst().getFill()
-                : Color.web("#34495E");
+    private void animateCircleFill(Circle circle, String cssVar) {
+        Paint currentFill = circle.getFill();
+        Color startColor = (currentFill instanceof Color) ? (Color) currentFill : Color.TRANSPARENT;
 
-        rootPane.setStyle("-fx-background-color: " + cssVar + ";");
-        rootPane.applyCss();
+        String originalStyle = circle.getStyle();
+        circle.setStyle("-fx-fill: " + cssVar + ";");
 
-        Timeline fade = getTimeline(start);
-        fade.play();
-    }
-    private Timeline getTimeline(Color start) {
-        Background nextBackground = rootPane.getBackground();
+        circle.applyCss();
 
-        Color target = (nextBackground != null && !nextBackground.getFills().isEmpty())
-                ? (Color) nextBackground.getFills().getFirst().getFill()
-                : start;
+        Paint targetPaint = circle.getFill();
+        Color targetColor = (targetPaint instanceof Color) ? (Color) targetPaint : startColor;
 
-        var colorProp = new javafx.beans.property.SimpleObjectProperty<>(start);
-        colorProp.addListener((_, _, n) -> rootPane.setBackground(new Background(new BackgroundFill(n, null, null))));
+        SimpleObjectProperty<Paint> fillProp = new SimpleObjectProperty<>(startColor);
 
+        fillProp.addListener((_, _, n) -> circle.setFill(n));
 
-        return new Timeline(
-                new KeyFrame(Duration.ZERO, new KeyValue(colorProp, start)),
-                new KeyFrame(Duration.millis(200), new KeyValue(colorProp, target))
+        Timeline timeline = new Timeline(
+                new KeyFrame(Duration.ZERO, new KeyValue(fillProp, startColor)),
+                new KeyFrame(Duration.millis(200), new KeyValue(fillProp, targetColor))
         );
+
+        timeline.play();
     }
+
     private void switchPanels(Region toHide, Region toShow) {
         toShow.setOpacity(0.0);
         toHide.setOpacity(1.0);
@@ -676,11 +672,11 @@ public class PomodoroController {
     //region Setup Handlers
     @FXML
     private void handleApplySetup() {
-        String subjectSelected = subjectListView.getSelectionModel().getSelectedItem();
+        String tagSelected = selectTagButton.getText();
         String taskSelected = taskListView.getSelectionModel().getSelectedItem();
-        if (subjectSelected == null) return;
+        if (tagSelected == null) return;
 
-        this.selectedSubject = subjectSelected;
+        this.selectedTag = tagSelected;
         this.selectedTask = taskSelected;
         toggleSetup();
         updateUIFromEngine();
@@ -703,23 +699,15 @@ public class PomodoroController {
     }
     @FXML
     private void toggleSetup() {
-        if (setupAnim != null) setupAnim.stop();
-        setupAnim = new TranslateTransition(Duration.millis(400), setupPane);
-        setupAnim.setInterpolator(Interpolator.EASE_BOTH);
 
         if (isSetupOpen) {
-            setupAnim.setToX(setupPane.getWidth()); // hide setup panel
-            setupAnim.setOnFinished(e -> {
                 setupPane.setVisible(false);
                 setupPane.setManaged(false);
-            });
+
         } else {
             setupPane.setVisible(true);
             setupPane.setManaged(true);
-            setupAnim.setToX(0); // show setup panel
-            setupAnim.setOnFinished(null);
         }
-        setupAnim.play();
         isSetupOpen = !isSetupOpen;
     }
 //endregion

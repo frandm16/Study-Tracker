@@ -8,8 +8,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 public class DatabaseHandler {
-    private static final String FOLDER_NAME = ".pomodoro_app";
-    private static final String DB_NAME = "pomodoro.db";
+    private static final String FOLDER_NAME = ".StudyTracker";
+    private static final String DB_NAME = "StudyTrackerDatabase.db";
 
     public static String getDatabaseUrl() {
         String userHome = System.getProperty("user.home");
@@ -35,17 +35,9 @@ public class DatabaseHandler {
                 "duration_minutes INTEGER NOT NULL, " +
                 "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)";
 
-        String sqlEvents = "CREATE TABLE IF NOT EXISTS session_events (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "session_id INTEGER, " +
-                "event_timestamp DATETIME, " +
-                "event_type TEXT NOT NULL, " +
-                "FOREIGN KEY (session_id) REFERENCES sessions(id))";
-
         try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
              Statement stmt = conn.createStatement()) {
             stmt.execute(sqlSessions);
-            stmt.execute(sqlEvents);
             System.out.println("[DEBUG] Database initialized correctly");
         } catch (SQLException e) {
             System.err.println("Error initializing database: " + e.getMessage());
@@ -70,47 +62,6 @@ public class DatabaseHandler {
             } catch (SQLException e) {
                 System.err.println("Error saving session: " + e.getMessage());
             }
-        }
-    }
-
-    public static void saveSessionWithEvents(String subject, String topic, String description, int minutes, java.util.Map<java.time.LocalDateTime, String> events) {
-        if (minutes < 0) return;
-
-        String sqlSession = "INSERT INTO sessions(subject, topic, description, duration_minutes) VALUES(?, ?, ?, ?)";
-        String sqlEvent = "INSERT INTO session_events(session_id, event_timestamp, event_type) VALUES(?, ?, ?)";
-
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl())) {
-            conn.setAutoCommit(false);
-
-            try (PreparedStatement pstmtSession = conn.prepareStatement(sqlSession, Statement.RETURN_GENERATED_KEYS)) {
-                pstmtSession.setString(1, subject);
-                pstmtSession.setString(2, topic);
-                pstmtSession.setString(3, description);
-                pstmtSession.setInt(4, minutes);
-                pstmtSession.executeUpdate();
-
-                ResultSet rs = pstmtSession.getGeneratedKeys();
-                if (rs.next()) {
-                    int sessionId = rs.getInt(1);
-
-                    try (PreparedStatement pstmtEvent = conn.prepareStatement(sqlEvent)) {
-                        for (java.util.Map.Entry<java.time.LocalDateTime, String> entry : events.entrySet()) {
-                            pstmtEvent.setInt(1, sessionId);
-                            pstmtEvent.setObject(2, entry.getKey());
-                            pstmtEvent.setString(3, entry.getValue());
-                            pstmtEvent.addBatch();
-                        }
-                        pstmtEvent.executeBatch();
-                    }
-                }
-                conn.commit();
-                System.out.println("[DEBUG] Session and events saved.");
-            } catch (SQLException e) {
-                conn.rollback();
-                System.err.println("Error saving session and events: " + e.getMessage());
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 

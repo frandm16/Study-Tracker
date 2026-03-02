@@ -8,15 +8,14 @@
 /* --- labels --- */
 .timer-label {
     -fx-font-family: "JetBrains Mono", "Monospaced";
-    -fx-font-size: 160px;
+    -fx-font-size: 100px;
     -fx-font-weight: bold;
     -fx-text-fill: -text-main;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 0, 0, 0, 4);
 }
 
 .state-label {
-    -fx-font-size: 32px;
-    -fx-font-weight: bold;
+    -fx-font-size: 22px;
     -fx-text-fill: -text-main;
     -fx-opacity: 0.8;
     -fx-letter-spacing: 4px;
@@ -131,7 +130,7 @@
 }
 
 .stat-cardbasic {
-    -fx-background-color: linear-gradient(from 0% 0% to 15% 75%, -stat-card-normal-bg, rgba(85, 85, 85, 0.07));
+    -fx-background-color: linear-gradient(from 0% 0% to 15% 75%, -stat-card-normal-bg, -stat-card-secundary-bg);
     -fx-background-radius: 16;
     -fx-padding: 20;
     -fx-max-width: Infinity;
@@ -198,4 +197,8 @@
     -fx-background-insets: 0, 2;
     -fx-background-radius: 5px;
     -fx-padding: 5px;
+}
+
+.circle-main {
+    -fx-background-color: -color-menu;
 }
