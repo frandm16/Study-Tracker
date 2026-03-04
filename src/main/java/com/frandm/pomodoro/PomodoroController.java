@@ -164,21 +164,28 @@ public class PomodoroController {
     //region fuzzy
     private void updateFuzzyResults(String input) {
         fuzzyResultsContainer.getChildren().clear();
-        if (input == null || input.trim().isEmpty()) return;
+        boolean isQueryEmpty = (input == null || input.trim().isEmpty());
 
         tagsWithTasksMap.forEach((tag, tasks) -> {
             if (filterTag == null || filterTag.equals(tag)) {
-                List<ExtractedResult> matches = FuzzySearch.extractTop(input, tasks, 3);
-                for (ExtractedResult match : matches) {
-                    if (match.getScore() > 50) {
-                        fuzzyResultsContainer.getChildren().add(createResultButton(match.getString(), tag));
+                if(isQueryEmpty){
+                    for (String task : tasks) {
+                        fuzzyResultsContainer.getChildren().add(createResultButton(task, tag));
+                    }
+                }else{
+                    List<ExtractedResult> matches = FuzzySearch.extractTop(input, tasks, 5);
+                    for (ExtractedResult match : matches) {
+                        if (match.getScore() > 40) {
+                            fuzzyResultsContainer.getChildren().add(createResultButton(match.getString(), tag));
+                        }
                     }
                 }
+
             }
         });
 
         fuzzyResultsContainer.getChildren().add(new Separator());
-        if (filterTag != null) {
+        if (filterTag != null && !isQueryEmpty) {
             Button createBtn = new Button("+ Create Task: '" + input + "' in " + filterTag);
             createBtn.setMaxWidth(Double.MAX_VALUE);
             createBtn.setOnAction(e -> selectTask(input, filterTag)); //TODO: que lleve a un menu de crear task y quitar el if de arriba
@@ -188,6 +195,7 @@ public class PomodoroController {
 
     private Button createResultButton(String task, String tag) {
         Button btn = new Button(task + " (" + tag + ")");
+        btn.getStyleClass().add("fuzzy-result-button");
         btn.setMaxWidth(Double.MAX_VALUE);
         btn.setAlignment(Pos.CENTER_LEFT);
         String color = tagColors.getOrDefault(tag, "#4a90e2");
@@ -208,6 +216,7 @@ public class PomodoroController {
         tagsListContainer.getChildren().clear();
         tagColors.forEach((name, color) -> {
             HBox row = new HBox(10);
+            row.getStyleClass().add("tag-row");
             row.setAlignment(Pos.CENTER_LEFT);
             row.setPadding(new javafx.geometry.Insets(8));
             if (name.equals(filterTag)) row.setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-background-radius: 5;");
@@ -262,17 +271,15 @@ public class PomodoroController {
         engine.fullReset();
         engine.resetTimeForState(PomodoroEngine.State.MENU);
 
+        tagField.setText("");
+        taskField.setText("");
+
         currentSelectedTag = null;
         currentSelectedTask = null;
         updateUIFromEngine();
     }
 
     @FXML private void handleMainAction() {
-        if(engine.getCurrentState() == PomodoroEngine.State.WAITING){
-            engine.start();
-        }else{
-            engine.pause();
-        }
 
         if (engine.getCurrentState() == PomodoroEngine.State.MENU){
             if(currentSelectedTag == null || currentSelectedTask == null){
@@ -282,7 +289,11 @@ public class PomodoroController {
                 startDate = LocalDateTime.now();
             }
         }else{
-            engine.pause();
+            if(engine.getCurrentState() == PomodoroEngine.State.WAITING){
+                engine.start();
+            }else{
+                engine.pause();
+            }
         }
         updateUIFromEngine();
     }
@@ -355,7 +366,9 @@ public class PomodoroController {
             refreshTagsList();
             selectTaskBtn.setDisable(true);
             fuzzySearchInput.clear();
-            fuzzyResultsContainer.getChildren().clear();
+
+            updateFuzzyResults("");
+
             Platform.runLater(() -> fuzzySearchInput.requestFocus());
         }
         isSetupOpen = !isSetupOpen;

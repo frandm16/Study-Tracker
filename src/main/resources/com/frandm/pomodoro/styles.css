@@ -199,3 +199,48 @@
 .circle-main {
     -fx-background-color: -color-menu;
 }
+
+/* --- setup --- */
+#setupPane .hbox-main-container {
+    -fx-background-color: #1e222b;
+    -fx-padding: 25;
+    -fx-background-radius: 15;
+    -fx-border-color: rgba(255,255,255,0.1);
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 20, 0, 0, 0);
+}
+
+#setupPane .fuzzy-result-button {
+    -fx-background-color: rgba(255,255,255,0.05);
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+    -fx-text-fill: #e0e0e0;
+    -fx-alignment: center-left;
+    -fx-cursor: hand;
+    -fx-transition: all 0.2s;
+}
+
+#setupPane .fuzzy-result-button:hover {
+    -fx-background-color: rgba(255,255,255,0.12);
+    -fx-translate-x: 5;
+}
+
+#setupPane .text-field {
+    -fx-background-color: rgba(0,0,0,0.2);
+    -fx-border-color: rgba(255,255,255,0.1);
+    -fx-border-radius: 5;
+    -fx-text-fill: white;
+    -fx-padding: 8;
+}
+
+
+
+.tag-row {
+    -fx-cursor: hand;
+    -fx-background-radius: 5;
+    -fx-padding: 8;
+}
+
+.tag-row:hover {
+    -fx-background-color: rgba(255,255,255,0.05);
+}
