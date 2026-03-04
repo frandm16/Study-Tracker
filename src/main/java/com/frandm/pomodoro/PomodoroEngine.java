@@ -22,6 +22,7 @@ public class PomodoroEngine {
     private int secondsRemaining;
     private int secondsElapsed = 0;
     private int sessionCounter = 0;
+    private int timePerSeconds = 47;
 
     private int alarmSoundVolume = 100;
     private int widthStats = 50;
@@ -39,9 +40,9 @@ public class PomodoroEngine {
     private void setupTimeline() {
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), _ -> {
             if (secondsRemaining > 0) {
-                secondsRemaining-=1;
+                secondsRemaining-=timePerSeconds;
                 if (currentState == State.WORK || countBreakTime) {
-                    secondsElapsed+=1;
+                    secondsElapsed+=timePerSeconds;
                 }
                 if (onTick != null) onTick.run();
             } else {

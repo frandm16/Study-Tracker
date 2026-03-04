@@ -142,9 +142,6 @@
     -fx-padding: 20;
     -fx-max-width: Infinity;
     -fx-max-height: Infinity;
-    -fx-border-color: -icon-red;
-    -fx-border-width: 2;
-    -fx-border-radius: 16;
 }
 
 .small-card-title {

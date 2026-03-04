@@ -120,6 +120,18 @@ public class DatabaseHandler {
         return -1;
     }
 
+    public static void createTag(String name, String color) {
+        String sql = "INSERT INTO tags (name, color) VALUES (?, ?) ON CONFLICT(name) DO NOTHING";
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, name);
+            pstmt.setString(2, color);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error al crear tag: " + e.getMessage());
+        }
+    }
+
     public static Map<String, List<String>> getTagsWithTasksMap() {
         Map<String, List<String>> map = new HashMap<>();
         String sql = "SELECT tg.name as tag_name, t.name as task_name FROM tasks t JOIN tags tg ON t.tag_id = tg.id";

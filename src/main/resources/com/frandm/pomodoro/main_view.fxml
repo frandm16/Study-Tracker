@@ -202,7 +202,7 @@
                                 <Label text="Project Distribution" styleClass="big-card-title" />
                                 <Label text="Distribution by Projects" styleClass="big-card-description" />
                                 <Separator styleClass="big-card-separator" />
-                                <PieChart fx:id="subjectsPieChart"
+                                <PieChart fx:id="tagPieChart"
                                           startAngle="90"
                                           labelsVisible="false"
                                           legendSide="RIGHT" maxWidth="-Infinity" maxHeight="-Infinity"/>
@@ -250,6 +250,8 @@
                             </Pane>
                             <VBox alignment="CENTER">
                                 <Label fx:id="stateLabel" text="READY TO START" styleClass="state-label" />
+                                <Label fx:id="tagField" text="" styleClass="state-label" />
+                                <Label fx:id="taskField" text="" styleClass="state-label" />
                                 <Label fx:id="timerLabel" text="25:00" styleClass="timer-label"/>
                             </VBox>
 
@@ -373,50 +375,24 @@
             </StackPane>
         </ScrollPane>
     </VBox>
-    <StackPane fx:id="setupPane" maxWidth="Infinity" maxHeight="Infinity" visible="false" managed="false">
-        <children>
-            <Region style="-fx-background-color: rgba(255, 255, 255, 0.2); -fx-background-radius: 15;">
-                <effect>
-                    <GaussianBlur radius="20.0" />
-                </effect>
-            </Region>
-                <StackPane maxHeight="-Infinity" maxWidth="-Infinity">
-
-                    <GridPane fx:id="manageTagsGrid" hgap="10.0" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="300.0" prefWidth="400.0" style="-fx-background-color: #1a1d24; -fx-background-radius: 10; -fx-padding: 20;" vgap="10.0">
-                        <columnConstraints>
-                            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-                            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-                            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-                        </columnConstraints>
-                        <rowConstraints>
-                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                        </rowConstraints>
-                        <children>
-
-                            <Label  text="Manage Tags" textFill="WHITE" GridPane.columnSpan="3" style="-fx-font-weight: bold;" />
-
-                            <VBox spacing="10.0" GridPane.columnSpan="2" GridPane.rowIndex="1" GridPane.rowSpan="2" style="-fx-background-color: #2a2e37; -fx-background-radius: 5; -fx-padding: 10;">
-                                <children>
-                                    <Label text="Current Tags" textFill="WHITE" />
-                                </children>
-                            </VBox>
-
-                            <VBox spacing="10.0" GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.rowSpan="2" style="-fx-background-color: #2a2e37; -fx-background-radius: 5; -fx-padding: 10;">
-                                <children>
-                                    <Label text="Add New Tag" textFill="WHITE" />
-                                    <TextField promptText="Tag name" />
-                                    <ColorPicker maxWidth="Infinity" />
-                                    <Button maxWidth="Infinity" text="Add Tag" styleClass="button-primary" />
-                                </children>
-                            </VBox>
-                        </children>
-                    </GridPane>
-                    <Button onAction="#toggleSetup" text="✕" StackPane.alignment="TOP_RIGHT" styleClass="close-button" />
-                </StackPane>
-
-        </children>
+    <StackPane fx:id="setupPane" visible="false" managed="false">
+        <Region style="-fx-background-color: rgba(0,0,0,0.7);"><effect><GaussianBlur radius="15" /></effect></Region>
+        <HBox spacing="20" maxWidth="800" maxHeight="550" style="-fx-background-color: #1e222b; -fx-padding: 25; -fx-background-radius: 15; -fx-border-color: rgba(255,255,255,0.1); -fx-border-width: 1;">
+            <VBox spacing="10" prefWidth="250">
+                <Label text="TAGS" style="-fx-font-weight: bold; -fx-text-fill: gray;" />
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="edge-to-edge"><VBox fx:id="tagsListContainer" spacing="5" /></ScrollPane>
+                <Separator /><TextField fx:id="tagNameInput" promptText="New Tag Name" /><ColorPicker fx:id="tagColorInput" maxWidth="Infinity" /><Button text="Add Tag" onAction="#handleAddNewTag" maxWidth="Infinity" />
+            </VBox>
+            <VBox spacing="10" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT"><Label text="SEARCH TASK" style="-fx-font-weight: bold; -fx-text-fill: gray;" /><Region HBox.hgrow="ALWAYS" /><Button text="✕" onAction="#toggleSetup" style="-fx-background-color: transparent; -fx-text-fill: white;" /></HBox>
+                <TextField fx:id="fuzzySearchInput" promptText="Type to search..." style="-fx-font-size: 14;" />
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"><VBox fx:id="fuzzyResultsContainer" spacing="8" /></ScrollPane>
+                <VBox spacing="10" style="-fx-background-color: rgba(255,255,255,0.05); -fx-padding: 15; -fx-background-radius: 10;">
+                    <Label fx:id="selectedNameLabel" text="Nothing selected" style="-fx-font-weight: bold;" />
+                    <Button fx:id="selectTaskBtn" text="SELECT TASK" onAction="#handleStartSessionFromSetup" disable="true" maxWidth="Infinity" styleClass="button-main" />
+                </VBox>
+            </VBox>
+        </HBox>
     </StackPane>
 
 </StackPane>
