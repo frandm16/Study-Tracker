@@ -327,7 +327,7 @@ public class HistoryView extends StackPane {
             stars.getChildren().add(star);
         }
 
-        header.getChildren().addAll(sessionTitle, stars, spacer, actionButtons);
+
 
         HBox tagsContainer = new HBox(8);
         tagsContainer.setAlignment(Pos.CENTER_LEFT);
@@ -348,7 +348,9 @@ public class HistoryView extends StackPane {
         desc.setWrapText(true);
         desc.setStyle("-fx-text-fill: -text-muted; -fx-font-style: italic; -fx-font-size: 11px;");
 
-        details.getChildren().addAll(timeRange, desc);
+        header.getChildren().addAll(sessionTitle, timeRange, spacer, actionButtons);
+        details.getChildren().addAll(stars, desc);
+
         card.setOnMouseClicked(e -> {
             boolean isExpanded = details.isVisible();
             details.setVisible(!isExpanded);

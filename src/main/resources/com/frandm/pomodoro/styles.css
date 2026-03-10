@@ -240,7 +240,7 @@
     -fx-padding: 25;
     -fx-background-radius: 15;
     -fx-border-radius: 15;
-    -fx-border-color: -color-border-subtle;
+    -fx-border-color: -color-border-subtle-light;
     -fx-border-width: 1;
 }
 
@@ -254,7 +254,7 @@
     -fx-background-color: -color-bg-subtle;
     -fx-text-fill: -text-main;
     -fx-background-radius: 5;
-    -fx-border-color: -color-border-subtle;
+    -fx-border-color: -color-border-subtle-light;
     -fx-border-radius: 5;
 }
 
@@ -363,8 +363,8 @@
 }
 
 .timeline-card {
-    fx-background-color: linear-gradient(from 0% 0% to 15% 75%, -stat-card-normal-bg, -stat-card-secundary-bg);
-    -fx-border-color: -color-border-subtle;
+    -fx-background-color: linear-gradient(from 0% 0% to 15% 75%, -stat-card-normal-bg, -stat-card-secundary-bg);
+    -fx-border-color: -color-border-subtle-light;
     -fx-border-radius: 15;
     -fx-background-radius: 15;
     -fx-cursor: hand;
@@ -374,13 +374,13 @@
 
 .card-expanded {
     -fx-background-color: linear-gradient(from 0% 0% to 15% 75%, -stat-card-normal-bg, -stat-card-secundary-bg);
-    -fx-border-color: -color-border-subtle;
+    -fx-border-color: -color-border-subtle-light;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 15, 0, 0, 8);
 }
 
 .tag-explorer-card {
     -fx-background-color: linear-gradient(from 0% 0% to 15% 75%, -stat-card-normal-bg, -stat-card-secundary-bg);
-    -fx-border-color: -color-border-subtle;
+    -fx-border-color: -color-border-subtle-light;
     -fx-border-radius: 15;
     -fx-background-radius: 15;
     -fx-padding: 25;
@@ -611,7 +611,7 @@
 .summaryStackPane {
     -fx-background-color: -bg-panels;
     -fx-background-radius: 20;
-    -fx-border-color: -color-border-subtle;
+    -fx-border-color: -color-border-subtle-light;
     -fx-border-width: 1.5;
     -fx-border-radius: 20;
 }
@@ -624,7 +624,7 @@
 
 #summaryTitle, #summaryDesc {
     -fx-background-color: -color-bg-subtle;
-    -fx-border-color: -color-border-subtle;
+    -fx-border-color: -color-border-subtle-light;
     -fx-border-radius: 8;
     -fx-background-radius: 8;
     -fx-text-fill: -text-main;
