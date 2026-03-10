@@ -717,3 +717,60 @@
 .toast-warning {
     -fx-icon-color: #FFDD00;
 }
+
+/* --- scroll bar --- */
+
+.scroll-bar:vertical, .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.scroll-bar .increment-arrow, .scroll-bar .decrement-arrow {
+    -fx-shape: "";
+    -fx-padding: 0;
+}
+
+.scroll-bar:vertical .track, .scroll-bar:horizontal .track {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+    -fx-background-radius: 10;
+    -fx-background-insets: 0 3 0 3;
+}
+
+.scroll-bar:horizontal .thumb {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+    -fx-background-radius: 10;
+    -fx-background-insets: 3 0 3 0;
+}
+
+.scroll-pane:hover .scroll-bar .thumb,
+.list-view:hover .scroll-bar .thumb,
+.table-view:hover .scroll-bar .thumb,
+.text-area:hover .scroll-bar .thumb {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: -color-accent !important;
+    -fx-background-insets: 0 2 0 2 !important;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.corner {
+    -fx-background-color: transparent;
+}

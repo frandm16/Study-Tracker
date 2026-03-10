@@ -27,6 +27,28 @@ public class SetupManager {
         AtomicInteger totalResults = new AtomicInteger(0);
         int GLOBAL_LIMIT = 20;
 
+        if (!isQueryEmpty){
+            Button createBtn = new Button("+ Create Task: '" + input + "'");
+            createBtn.setMaxWidth(Double.MAX_VALUE);
+            if(filterTag != null){
+                createBtn.setOnAction(e -> {
+                    DatabaseHandler.getOrCreateTask(filterTag, colors.getOrDefault(filterTag, "#ffffff"), input);
+                    selectedTask = input;
+                    selectedTag = filterTag;
+                    controller.refreshDatabaseData();
+                    updateFuzzyResults(input, container, tagsMap, colors, onSelect);
+                    controller.handleStartSessionFromSetup();
+                    onSelect.run();
+                    NotificationManager.show("Task created", "Successfully created " + input, NotificationManager.NotificationType.SUCCESS);
+                });
+            }else{
+                createBtn.setOnAction(e -> {
+                    NotificationManager.show("Cant create task", "A tag must be selected", NotificationManager.NotificationType.ERROR);
+                });
+            }
+            container.getChildren().addAll(createBtn, new Separator());
+        }
+
         tagsMap.forEach((tag, tasks) -> {
             if (totalResults.get() >= GLOBAL_LIMIT) return;
 
@@ -52,31 +74,6 @@ public class SetupManager {
                 }
             }
         });
-
-        if (!isQueryEmpty) {
-
-            container.getChildren().add(new Separator());
-            Button createBtn = new Button("+ Create Task: '" + input + "'");
-            createBtn.setMaxWidth(Double.MAX_VALUE);
-            if(filterTag != null){
-                createBtn.setOnAction(e -> {
-                    DatabaseHandler.getOrCreateTask(filterTag, colors.getOrDefault(filterTag, "#ffffff"), input);
-                    selectedTask = input;
-                    selectedTag = filterTag;
-                    controller.refreshDatabaseData();
-                    updateFuzzyResults(input, container, tagsMap, colors, onSelect);
-                    controller.handleStartSessionFromSetup();
-                    onSelect.run();
-                    NotificationManager.show("Task created", "Successfully created " + input, NotificationManager.NotificationType.SUCCESS);
-                });
-            }else{
-                createBtn.setOnAction(e -> {
-                    NotificationManager.show("Cant create task", "A tag must be selected", NotificationManager.NotificationType.ERROR);
-                });
-            }
-
-            container.getChildren().add(createBtn);
-        }
     }
 
     private Button createResultButton(String task, String tag, Map<String, String> colors, Runnable onSelect) {

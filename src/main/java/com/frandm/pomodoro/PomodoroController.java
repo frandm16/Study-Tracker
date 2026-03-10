@@ -16,12 +16,9 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.Circle;
-import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
-
 import javax.swing.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -102,9 +99,9 @@ public class PomodoroController {
         //endregion
 
         statsDashboard = new StatsDashboard(
-                timeThisWeekLabel, streakLabel, streakVBox, streakImage, bestDayLabel,
-                tasksLabel, timeLastMonthLabel, weeklyLineChart,
-                tagPieChart, statsPlaceholder
+            timeThisWeekLabel, streakLabel, streakVBox, streakImage, bestDayLabel,
+            tasksLabel, timeLastMonthLabel, weeklyLineChart,
+            tagPieChart, statsPlaceholder
         );
 
         summaryPane.setVisible(false);
@@ -153,20 +150,28 @@ public class PomodoroController {
         //endregion
 
         fuzzySearchInput.textProperty().addListener((obs, old, val) ->
-                setupManager.updateFuzzyResults(val, fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
+            setupManager.updateFuzzyResults(val, fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
         );
 
         fuzzySearchInput.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
-                String input = fuzzySearchInput.getText();
+                if (!fuzzyResultsContainer.getChildren().isEmpty()) {
+                    List<Button> buttons = fuzzyResultsContainer.getChildren().stream()
+                        .filter(node -> node instanceof Button)
+                        .map(node -> (Button) node)
+                        .toList();
 
-                    if (!fuzzyResultsContainer.getChildren().isEmpty()) {
-                        fuzzyResultsContainer.getChildren().stream()
-                                .filter(node -> node instanceof Button)
-                                .map(node -> (Button) node)
-                                .findFirst()
-                                .ifPresent(Button::fire);
+                    if(!buttons.isEmpty()){
+                        Button target;
+                        if(buttons.size() > 1){
+                            target = buttons.get(1);
+                        }else {
+                            target = buttons.getFirst();
+                        }
+                        target.fire();
                     }
+
+                }
             }
         });
 
