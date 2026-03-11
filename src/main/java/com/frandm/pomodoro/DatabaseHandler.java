@@ -95,6 +95,11 @@ public class DatabaseHandler {
         executeUpdates(sql, taskId, title, desc, mins, start.format(DATE_FORMATTER), end.format(DATE_FORMATTER), rating);
     }
 
+    public static void deleteSession(int sessionId) {
+        String sql = "DELETE FROM sessions WHERE id = ?";
+        executeUpdates(sql, sessionId);
+    }
+
     public static int getOrCreateTask(String tagName, String tagColor, String taskName) {
         try (Connection conn = DriverManager.getConnection(getDatabaseUrl())) {
             String sqlTag = "INSERT OR IGNORE INTO tags(name, color) VALUES(?, ?)";
@@ -188,6 +193,11 @@ public class DatabaseHandler {
     public static void updateSessionFavorite(int sessionId, boolean fav) {
         String sql = "UPDATE sessions SET is_favorite = ? WHERE id = ?";
         executeUpdates(sql, fav ? 1 : 0, sessionId);
+    }
+
+    public static void updateSessionEdit(int sessionId, int taskId, String title, String description, int rating) {
+        String sql = "UPDATE sessions SET task_id = ?, title = ?, description = ?, rating = ? WHERE id = ?";
+        executeUpdates(sql, taskId, title, description, rating, sessionId);
     }
 //endregion
 //region queries

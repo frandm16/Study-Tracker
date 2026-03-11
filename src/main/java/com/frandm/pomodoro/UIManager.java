@@ -70,7 +70,7 @@ public class UIManager {
                         "-fx-padding: 2 10; " +
                         "-fx-text-fill: " + color + "; " +
                         "-fx-font-weight: bold; " +
-                        "-fx-font-size: 14px;" +
+                        "-fx-font-size: 18px;" +
                         "-fx-cursor: hand;"
         );
 

@@ -1,6 +1,8 @@
 package com.frandm.pomodoro;
 
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
@@ -360,17 +362,51 @@ public class HistoryView extends StackPane {
     private VBox createTimelineCard(Session s) {
         VBox card = new VBox();
         card.getStyleClass().add("timeline-card");
+
         HBox header = new HBox();
         header.getStyleClass().add("timeline-card-header");
         Label sessionTitle = new Label(s.getTitle());
         sessionTitle.getStyleClass().add("timeline-card-title");
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
+
         String start = s.getStartDate().substring(11, 16);
         String end = s.getEndDate().substring(11, 16);
         Label timeRange = new Label(start + " — " + end + " (" + s.getTotalMinutes() + " m)");
         timeRange.getStyleClass().add("timeline-card-time");
-        header.getChildren().addAll(sessionTitle, timeRange, spacer);
+
+        Button optionsBtn = new Button();
+        optionsBtn.getStyleClass().add("card-options-button");
+        FontIcon optionsIcon = new FontIcon("mdi2d-dots-horizontal");
+        optionsIcon.getStyleClass().add("options-icon");
+        optionsBtn.setGraphic(optionsIcon);
+
+        ContextMenu contextMenu = new ContextMenu();
+        contextMenu.getStyleClass().add("session-context-menu");
+
+        MenuItem editItem = new MenuItem("Edit");
+        editItem.setGraphic(new FontIcon("mdi2p-pencil"));
+        editItem.setOnAction(e -> {
+            controller.openEditSession(s);
+        });
+
+
+        MenuItem deleteItem = new MenuItem("Delete");
+        deleteItem.setGraphic(new FontIcon("mdi2t-trash-can-outline"));
+        deleteItem.getStyleClass().add("menu-item-delete");
+        deleteItem.setOnAction(e -> {
+            controller.showDeleteConfirmation(s, this);
+        });
+
+        contextMenu.getItems().addAll(editItem, deleteItem);
+
+        optionsBtn.setOnAction(e -> {
+            contextMenu.show(optionsBtn, Side.BOTTOM, 0, 0);
+        });
+
+        header.getChildren().addAll(sessionTitle, timeRange, spacer, optionsBtn);
+
         HBox badges = new HBox();
         badges.getStyleClass().add("timeline-card-badges");
         Label tagBadge = new Label(s.getTag());
@@ -379,7 +415,44 @@ public class HistoryView extends StackPane {
         Label taskBadge = new Label(s.getTask());
         taskBadge.getStyleClass().add("task-badge");
         badges.getChildren().addAll(tagBadge, taskBadge);
-        card.getChildren().addAll(header, badges);
+
+        VBox details = new VBox(12);
+        details.setManaged(false);
+        details.setVisible(false);
+        details.setPadding(new Insets(10, 0, 0, 0));
+
+        HBox stars = new HBox();
+        stars.setAlignment(Pos.CENTER_LEFT);
+        for (int i = 1; i <= 5; i++) {
+
+            FontIcon star = new FontIcon("fas-star");
+            star.setIconSize(10);
+            star.setCursor(javafx.scene.Cursor.HAND);
+
+            if (i <= s.getRating()) {
+                star.getStyleClass().add("selectedStarHistory");
+            } else {
+                star.getStyleClass().add("unselectedStarHistory");
+            }
+            stars.getChildren().add(star);
+        }
+        Label desc = new Label(s.getDescription());
+        desc.setWrapText(true);
+        desc.setStyle("-fx-text-fill: -text-muted; -fx-font-style: italic; -fx-font-size: 11px;");
+
+        details.getChildren().addAll(stars, desc);
+
+        card.setOnMouseClicked(e -> {
+            boolean isExpanded = details.isVisible();
+            details.setVisible(!isExpanded);
+            details.setManaged(!isExpanded);
+            if (!isExpanded) card.getStyleClass().add("card-expanded");
+            else card.getStyleClass().remove("card-expanded");
+        });
+
+
+        card.getChildren().addAll(header, badges, details);
         return card;
     }
+
 }

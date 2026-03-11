@@ -41,6 +41,9 @@
     -color-border-subtle-light: rgba(255, 255, 255, 0.1);
     -color-border: #d1d1d1;
     -shadow-default:  rgba(0, 0, 0, 0.34);
+
+    -color-danger: #ff4757;
+    -color-danger-hover: #ff6b81;
 }
 
 .primer-light {
@@ -81,6 +84,9 @@
     -color-border-subtle-light: rgba(197, 197, 197, 0.1);
     -color-border: #777777;
     -shadow-default:  rgba(0, 0, 0, 0.34);
+
+    -color-danger: #d73a49;
+    -color-danger-hover: #cb2431;
 }
 
 .primer-electric-blue {
@@ -105,23 +111,22 @@
     -stat-card-red-bg: rgba(244, 63, 94, 0.15);
     -stat-card-secundary-bg: rgba(56, 189, 248, 0.05);
 
-    /* Heatmap (Gradiente de Azul Eléctrico) */
     -heatmap-empty: rgba(255, 255, 255, 0.03);
-    -heatmap-very-low: #0c4a6e;      /* Azul oscuro */
-    -heatmap-low:      #0369a1;      /* Azul medio */
-    -heatmap-medium:   #0284c7;      /* Azul brillante */
-    -heatmap-high:     #38bdf8;      /* Celeste eléctrico */
-    -heatmap-very-high: #7dd3fc;      /* Cian claro */
-    -heatmap-extreme:   #f0f9ff;      /* Blanco azulado (fuego azul) */
+    -heatmap-very-low: #0c4a6e;
+    -heatmap-low:      #0369a1;
+    -heatmap-medium:   #0284c7;
+    -heatmap-high:     #38bdf8;
+    -heatmap-very-high: #7dd3fc;
+    -heatmap-extreme:   #f0f9ff;
 
-    /* Colores de Sesión (Adaptados al tema azul) */
     -color-work: #082f49;
     -color-work-secundary: #7dd3fc;
-    -color-break: #1e1b4b;           /* Un toque de violeta para diferenciar */
+    -color-break: #1e1b4b;
     -color-break-secundary: #a5b4fc;
     -color-long-break: #1e293b;
     -color-long-break-secundary: #94a3b8;
-
-    /* Bordes */
     -color-border-subtle: rgba(56, 189, 248, 0.2);
+
+    -color-danger: #f43f5e;
+    -color-danger-hover: #fb7185;
 }

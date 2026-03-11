@@ -5,6 +5,8 @@ import atlantafx.base.theme.PrimerLight;
 import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.DoubleProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -31,7 +33,14 @@ public class PomodoroController {
     public TextField summaryTitle;
     public TextArea summaryDesc;
     public HBox starsContainer;
+    public StackPane confirmOverlay, stackpaneCircle;
+    public Pane arcPane;
     //region FXML
+    @FXML private GridPane editSessionPane;
+    @FXML private ComboBox<String> editTagCombo, editTaskCombo;
+    @FXML private TextField editTitleField;
+    @FXML private TextArea editDescArea;
+    @FXML private HBox editStarsContainer;
     @FXML private ScrollPane mainScrollPane;
     @FXML private GridPane setupPane, mainContainer, settingsPane;
     @FXML private StackPane rootPane;
@@ -61,7 +70,12 @@ public class PomodoroController {
 
     private StatsDashboard statsDashboard;
     private CalendarView calendarView;
+
     private HistoryView historyView;
+    private Session sessionToDelete;
+    private Session sessionToEdit;
+    private final List<FontIcon> editStarNodes = new ArrayList<>();
+    private int editRating = 0;
 
     private boolean isSettingsOpen = false;
     private boolean isDarkMode = true;
@@ -97,6 +111,8 @@ public class PomodoroController {
         historyContainer.getChildren().clear();
         historyContainer.getChildren().add(historyView);
         VBox.setVgrow(historyView, Priority.ALWAYS);
+        setupEditComboListeners();
+        setupEditStars();
         //endregion
 
         statsDashboard = new StatsDashboard(
@@ -191,8 +207,8 @@ public class PomodoroController {
 
     //region data
     public void refreshDatabaseData() {
-        this.tagsWithTasksMap = DatabaseHandler.getTagsWithTasksMap();
-        this.tagColors = DatabaseHandler.getTagColors();
+        tagsWithTasksMap = DatabaseHandler.getTagsWithTasksMap();
+        tagColors = DatabaseHandler.getTagColors();
     }
 
     private void updateEngineSettings() {
@@ -667,6 +683,141 @@ public class PomodoroController {
         setupManager.setSelectedTask(task);
         updateActiveTaskDisplay(setupManager.getSelectedTag(), setupManager.getSelectedTask());
         updateUIFromEngine();
+    }
+
+    public void showDeleteConfirmation(Session s, HistoryView h) {
+        sessionToDelete = s;
+        historyView = h;
+        toggleConfirmDelete();
+    }
+
+    public void toggleConfirmDelete(){
+        boolean isVisible = confirmOverlay.isVisible();
+        confirmOverlay.setVisible(!isVisible);
+        confirmOverlay.setManaged(!isVisible);
+    }
+
+    @FXML
+    private void onConfirmDeleteClick() {
+        if (sessionToDelete != null) {
+            DatabaseHandler.deleteSession(sessionToDelete.getId());
+            if (historyView != null) {
+                historyView.resetAndReload();
+            }
+            toggleConfirmDelete();
+            sessionToDelete = null;
+            NotificationManager.show("Session Delete", "Successfully deleted the session", NotificationManager.NotificationType.SUCCESS);
+        }
+    }
+
+    private void setupEditStars() {
+        editStarsContainer.getChildren().clear();
+        editStarNodes.clear();
+        for (int i = 1; i <= 5; i++) {
+            int val = i;
+            FontIcon star = new FontIcon("fas-star");
+            star.setIconSize(30);
+            star.setCursor(javafx.scene.Cursor.HAND);
+            star.setOnMouseClicked(e -> {
+                editRating = (val == editRating) ? 0 : val;
+                updateEditStarsUI();
+            });
+            editStarNodes.add(star);
+            editStarsContainer.getChildren().add(star);
+        }
+    }
+
+    private void updateEditStarsUI() {
+        for (int i = 0; i < editStarNodes.size(); i++) {
+            editStarNodes.get(i).getStyleClass().removeAll("selectedStar", "unselectedStar");
+            if (i < editRating) {
+                editStarNodes.get(i).getStyleClass().add("selectedStar");
+            } else {
+                editStarNodes.get(i).getStyleClass().add("unselectedStar");
+            }
+        }
+    }
+
+    public void openEditSession(Session s) {
+        sessionToEdit = s;
+
+        refreshEditFilters();
+
+        editTitleField.setText(s.getTitle());
+        editDescArea.setText(s.getDescription());
+
+        editTagCombo.setValue(s.getTag());
+
+        updateEditTaskCombo(s.getTag());
+        editTaskCombo.setValue(s.getTask());
+
+        editRating = s.getRating();
+        updateEditStarsUI();
+
+        toggleEditSession();
+    }
+
+    @FXML
+    private void handleEditSession() {
+        if (sessionToEdit == null) return;
+
+        String selectedTag = editTagCombo.getValue();
+        String selectedTask = editTaskCombo.getValue();
+
+        if (selectedTag == null || selectedTask == null) {
+            NotificationManager.show("Error", "Tag and Task are required", NotificationManager.NotificationType.ERROR);
+            return;
+        }
+
+        int taskId = DatabaseHandler.getOrCreateTask(
+                selectedTag,
+                tagColors.getOrDefault(selectedTag, "#ffffff"),
+                selectedTask
+        );
+        DatabaseHandler.updateSessionEdit(
+                sessionToEdit.getId(),
+                taskId,
+                editTitleField.getText(),
+                editDescArea.getText(),
+                editRating
+        );
+
+        NotificationManager.show("Success", "Session updated", NotificationManager.NotificationType.SUCCESS);
+
+        if (historyView != null) {
+            historyView.resetAndReload();
+        }
+
+        toggleEditSession();
+    }
+
+    @FXML
+    public void toggleEditSession() {
+        boolean isVisible = editSessionPane.isVisible();
+        editSessionPane.setVisible(!isVisible);
+        editSessionPane.setManaged(!isVisible);
+    }
+
+    private void setupEditComboListeners() {
+        editTagCombo.setOnAction(e -> {
+            String selectedTag = editTagCombo.getValue();
+            if (selectedTag != null) {
+                updateEditTaskCombo(selectedTag);
+                if (sessionToEdit != null && !selectedTag.equals(sessionToEdit.getTag())) {
+                    editTaskCombo.setValue(null);
+                }
+            }
+        });
+    }
+
+    private void updateEditTaskCombo(String tagName) {
+        editTaskCombo.getItems().clear();
+        editTaskCombo.getItems().addAll(DatabaseHandler.getTasksByTag(tagName));
+    }
+
+    private void refreshEditFilters() {
+        editTagCombo.getItems().clear();
+        editTagCombo.getItems().addAll(DatabaseHandler.getTagColors().keySet());
     }
 
 }
