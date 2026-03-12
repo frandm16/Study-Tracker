@@ -14,12 +14,13 @@
 <?import javafx.scene.effect.GaussianBlur?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
+<?import javafx.scene.Group?>
 <StackPane fx:id="rootPane" prefHeight="700.0" prefWidth="1000.0"
            stylesheets="@styles.css" styleClass="root-pane"
            xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.frandm.pomodoro.PomodoroController">
     <VBox >
-        <GridPane>
+        <GridPane >
             <padding><Insets top="20" right="25" bottom="10" left="25" /></padding>
             <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="150.0" />
@@ -214,7 +215,7 @@
                     </GridPane>
                 </VBox>
             </GridPane >
-            <GridPane StackPane.alignment="TOP_CENTER" fx:id="mainContainer" maxWidth="Infinity">
+            <GridPane  StackPane.alignment="TOP_CENTER" fx:id="mainContainer" maxHeight="Infinity" maxWidth="Infinity" >
                 <columnConstraints>
                     <ColumnConstraints percentWidth="15" />
                     <ColumnConstraints  percentWidth="70" />
@@ -225,57 +226,61 @@
                 </rowConstraints>
                 <VBox fx:id="scheduleListContainer" spacing="10" alignment="TOP_RIGHT" GridPane.columnIndex="2" />
                 <VBox GridPane.columnIndex="1" spacing="20" alignment="CENTER" >
-                    <VBox fx:id="activeTaskContainer"  alignment="CENTER" spacing="8" minHeight="30">
-                    </VBox>
-                    <StackPane fx:id="stackpaneCircle"  >
-                        <Circle fx:id="circleMain" styleClass="circle-main" radius="250" strokeWidth="8" />
-                        <Pane fx:id="arcPane" maxWidth="500" maxHeight="500">
-                            <Arc fx:id="progressArc"
-                                 radiusX="250.0"
-                                 radiusY="250.0"
-                                 centerX="250.0"
-                                 centerY="250.0"
-                                 startAngle="90"
-                                 length="90"
-                                 strokeWidth="12"
-                                 stroke="#4a90e2"
-                                 fill="transparent"
-                                 strokeLineCap="ROUND"/>
-                        </Pane>
-                        <VBox alignment="CENTER" VBox.vgrow="ALWAYS">
-                            <Label fx:id="stateLabel" text="Pomodoro" styleClass="state-label" />
-                            <Label fx:id="timerLabel" text="25:00" styleClass="timer-label"/>
-                            <Button fx:id="skipBtn" onAction="#handleSkip"
-                                    styleClass="menu-button" alignment="CENTER"
-                                    contentDisplay="GRAPHIC_ONLY" >
-                                <graphic>
-                                    <FontIcon iconLiteral="mdi2s-skip-next" styleClass="menu-icon" />
-                                </graphic>
-                                <tooltip>
-                                    <Tooltip text="Skip" showDelay="250ms" />
-                                </tooltip>
-                            </Button>
+                    <StackPane fx:id="stackpaneCircle" alignment="CENTER" VBox.vgrow="ALWAYS" >
+                        <VBox spacing="15" alignment="CENTER">
+                            <VBox fx:id="activeTaskContainer"  alignment="CENTER" spacing="8" minHeight="30">
+                            </VBox>
+                            <StackPane >
+                                <Circle  fx:id="circleMain" styleClass="circle-main" strokeWidth="8" />
+
+                                <Arc style="-fx-background-color: rgba(255,255,255,0.6)" fx:id="progressArc"
+                                     managed="false"
+                                     startAngle="90"
+                                     length="0"
+                                     strokeWidth="12"
+                                     stroke="#4a90e2"
+                                     fill="transparent"
+                                     strokeLineCap="ROUND"
+                                     mouseTransparent="true" />
+                                <VBox maxWidth="-Infinity" maxHeight="-Infinity" alignment="CENTER" spacing="40">
+                                    <VBox  fx:id="timerTextContainer" maxWidth="-Infinity" maxHeight="-Infinity" alignment="CENTER">
+                                        <Label fx:id="stateLabel" text="Pomodoro" styleClass="state-label" />
+                                        <Label fx:id="timerLabel" text="25:00" styleClass="timer-label"/>
+                                    </VBox>
+                                    <Button fx:id="skipBtn" onAction="#handleSkip"
+                                            styleClass="menu-button" alignment="CENTER"
+                                            contentDisplay="GRAPHIC_ONLY" >
+                                        <graphic>
+                                            <FontIcon iconLiteral="mdi2s-skip-next" styleClass="menu-icon" />
+                                        </graphic>
+                                        <tooltip>
+                                            <Tooltip text="Skip" showDelay="250ms" />
+                                        </tooltip>
+                                    </Button>
+                                </VBox>
+
+                            </StackPane>
+                            <HBox alignment="CENTER" >
+
+                                <Button fx:id="startPauseBtn" onAction="#handleMainAction"
+                                        styleClass="menu-button" alignment="CENTER"
+                                        contentDisplay="GRAPHIC_ONLY" >
+                                </Button>
+
+
+                                <Button fx:id="finishBtn" onAction="#handleFinish"
+                                        styleClass="menu-button" alignment="CENTER"
+                                        contentDisplay="GRAPHIC_ONLY" >
+                                    <graphic>
+                                        <FontIcon iconLiteral="mdi2s-stop" styleClass="menu-icon" />
+                                    </graphic>
+                                    <tooltip>
+                                        <Tooltip text="Finish" showDelay="250ms" />
+                                    </tooltip>
+                                </Button>
+                            </HBox>
                         </VBox>
-
                     </StackPane>
-                    <HBox alignment="CENTER"  spacing="25">
-                        <Button fx:id="startPauseBtn" onAction="#handleMainAction"
-                                styleClass="menu-button" alignment="CENTER"
-                                contentDisplay="GRAPHIC_ONLY" >
-                        </Button>
-
-                        <Button fx:id="finishBtn" onAction="#handleFinish"
-                                styleClass="menu-button" alignment="CENTER"
-                                contentDisplay="GRAPHIC_ONLY" >
-                            <graphic>
-                                <FontIcon iconLiteral="mdi2s-stop" styleClass="menu-icon" />
-                            </graphic>
-                            <tooltip>
-                                <Tooltip text="Finish" showDelay="250ms" />
-                            </tooltip>
-                        </Button>
-                    </HBox>
-
                 </VBox>
             </GridPane>
             <GridPane StackPane.alignment="TOP_CENTER"  maxHeight="-Infinity" maxWidth="Infinity">
@@ -408,6 +413,14 @@
                                     <Label fx:id="widthSliderValLabel" text="50%" styleClass="val-label"/>
                                 </HBox>
                                 <Slider fx:id="widthSlider" min="25" value="50"/>
+                            </VBox>
+                            <VBox spacing="8">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="UI Scale"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="circleSizeValLabel" text="25" styleClass="val-label"/>
+                                </HBox>
+                                <Slider fx:id="circleSizeSlider" min="20" max="80" value="50"/>
                             </VBox>
                             <Button onAction="#toggleTheme" text="Toggle Theme (light/dark)" styleClass="reset-button"/>
                         </VBox>

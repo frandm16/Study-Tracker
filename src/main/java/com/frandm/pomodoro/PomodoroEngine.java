@@ -26,6 +26,7 @@ public class PomodoroEngine {
 
     private int alarmSoundVolume = 100;
     private int widthStats = 50;
+    private int uiSize = 55;
 
     private Runnable onTick;
     private Runnable onStateChange;
@@ -64,7 +65,7 @@ public class PomodoroEngine {
         if (onTick != null) onTick.run();
         if (onStateChange != null) onStateChange.run();
     }
-    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int alarmVolume, int inWidthStats) {
+    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int alarmVolume, int inWidthStats, int uiSize) {
         this.workMins = w;
         this.shortMins = s;
         this.longMins = l;
@@ -74,6 +75,7 @@ public class PomodoroEngine {
         this.countBreakTime = cBreak;
         this.alarmSoundVolume = alarmVolume;
         this.widthStats = inWidthStats;
+        this.uiSize = uiSize;
 
         if (currentState == State.MENU) {
             resetTimeForState(State.MENU);
@@ -159,6 +161,7 @@ public class PomodoroEngine {
     public void setOnTimerFinished(Runnable r) {this.onTimerFinished = r;}
     public void setAlarmSoundVolume(int alarmSoundVolume) {this.alarmSoundVolume = alarmSoundVolume;}
     public void setWidthStats(int widthStats) {this.widthStats = widthStats;}
+    public void setUiSize(int uiSize) { this.uiSize = uiSize; }
     //endregion
 
     //region Getters
@@ -195,5 +198,6 @@ public class PomodoroEngine {
     }
     public int getAlarmSoundVolume() {return alarmSoundVolume;}
     public int getWidthStats() {return widthStats;}
+    public int getUiSize() { return uiSize; }
     //endregion
 }

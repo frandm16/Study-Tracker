@@ -8,10 +8,11 @@
 /* --- labels --- */
 .timer-label {
     -fx-font-family: "JetBrains Mono", "Monospaced";
-    -fx-font-size: 120px;
+    -fx-font-size: 100px;
     -fx-font-weight: bold;
     -fx-text-fill: -text-main;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 0, 0, 0, 4);
+    -fx-padding: 0;
 }
 
 .task-badge {
@@ -187,7 +188,7 @@
 .small-card-main-content {
     -fx-padding: 10 0 5 0;
     -fx-text-fill: -text-dark;
-    -fx-font-size: 34 px;
+    -fx-font-size: 34px;
     -fx-font-weight: bold;
 }
 
@@ -979,7 +980,7 @@
 }
 
 .menu-icon {
-    -fx-icon-size: 50px;
+    -fx-icon-size: 75px;
     -fx-icon-color: -color-border;
 
 }
@@ -993,10 +994,6 @@
     -fx-cursor: hand;
 }
 
-.menu-button:hover {
-    -fx-scale-x: 1.1;
-    -fx-scale-y: 1.1;
-}
 
 /* --- combobox --- */
 

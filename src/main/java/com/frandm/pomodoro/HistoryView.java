@@ -225,27 +225,10 @@ public class HistoryView extends StackPane {
 
     public void resetAndReload() {
         currentOffset = 0;
+        lastDate = null;
         sessionsContainer.getChildren().clear();
-
-        LocalDate today = LocalDate.now();
-        List<Session> allLoaded = DatabaseHandler.getFilteredSessions(currentTag, currentTask, 500, 0);
-
-        long todayTotal = allLoaded.stream()
-                .filter(s -> LocalDateTime.parse(s.getStartDate(), DATE_FORMATTER).toLocalDate().equals(today))
-                .mapToLong(Session::getTotalMinutes)
-                .sum();
-
-        List<Session> todaySessions = allLoaded.stream()
-                .filter(s -> LocalDateTime.parse(s.getStartDate(), DATE_FORMATTER).toLocalDate().equals(today))
-                .toList();
-
-        String statusMessage = todaySessions.isEmpty() ? "Not registered sessions" : null;
-
-        createNewDayBlock(today, todayTotal, statusMessage);
-        lastDate = today;
-
-        if (!todaySessions.isEmpty()) {
-            todaySessions.forEach(s -> lastSessionsContainer.getChildren().add(createTimelineCard(s)));
+        if (lastSessionsContainer != null) {
+            lastSessionsContainer.getChildren().clear();
         }
 
         loadMore();
@@ -253,11 +236,24 @@ public class HistoryView extends StackPane {
 
     private void loadMore() {
         List<Session> sessions = DatabaseHandler.getFilteredSessions(currentTag, currentTask, PAGE_SIZE, currentOffset);
+        LocalDate today = LocalDate.now();
+
+        if (currentOffset == 0) {
+            boolean hasTodaySessions = !sessions.isEmpty() &&
+                    LocalDateTime.parse(sessions.get(0).getStartDate(), DATE_FORMATTER).toLocalDate().equals(today);
+
+            if (!hasTodaySessions) {
+                createNewDayBlock(today, 0, "No sessions registered for today");
+                lastDate = today;
+            }
+        }
 
         if (sessions.isEmpty() && currentOffset == 0) {
-            Label noSessions = new Label("No sessions found");
-            noSessions.getStyleClass().add("no-sessions-label");
-            sessionsContainer.getChildren().add(noSessions);
+            if (sessionsContainer.getChildren().isEmpty()) {
+                Label noSessions = new Label("No sessions found");
+                noSessions.getStyleClass().add("no-sessions-label");
+                sessionsContainer.getChildren().add(noSessions);
+            }
             loadMoreBtn.setVisible(false);
             return;
         }
@@ -274,7 +270,9 @@ public class HistoryView extends StackPane {
                 createNewDayBlock(sessionDate, totalMinutes, null);
                 lastDate = sessionDate;
             }
-            lastSessionsContainer.getChildren().add(createTimelineCard(s));
+            if (lastSessionsContainer != null) {
+                lastSessionsContainer.getChildren().add(createTimelineCard(s));
+            }
         }
 
         currentOffset += PAGE_SIZE;

@@ -29,12 +29,16 @@ import java.util.*;
 
 public class PomodoroController {
 
+
     public GridPane summaryPane;
     public TextField summaryTitle;
     public TextArea summaryDesc;
     public HBox starsContainer;
     public StackPane confirmOverlay, stackpaneCircle;
     public Pane arcPane;
+    public VBox timerTextContainer;
+    public Slider circleSizeSlider;
+    public Label circleSizeValLabel;
     //region FXML
     @FXML private GridPane editSessionPane;
     @FXML private ComboBox<String> editTagCombo, editTaskCombo;
@@ -70,6 +74,7 @@ public class PomodoroController {
 
     private StatsDashboard statsDashboard;
     private CalendarView calendarView;
+    private double SIZE_FACTOR = 0.25;
 
     private HistoryView historyView;
     private Session sessionToDelete;
@@ -125,6 +130,9 @@ public class PomodoroController {
         summaryPane.setManaged(false);
         setupStars();
 
+        stackpaneCircle.widthProperty().addListener((obs, oldVal, newVal) -> resizeCircle());
+        stackpaneCircle.heightProperty().addListener((obs, oldVal, newVal) -> resizeCircle());
+
         NotificationManager.init(notificationContainer);
 
         //region paneles
@@ -140,9 +148,15 @@ public class PomodoroController {
         setupSlider(intervalSlider, intervalValLabel, engine.getInterval(), engine::setInterval, "");
         setupSlider(alarmVolumeSlider, alarmVolumeValLabel, engine.getAlarmSoundVolume(), engine::setAlarmSoundVolume, "%");
         setupSlider(widthSlider,widthSliderValLabel,engine.getWidthStats(), engine::setWidthStats, "%");
+        setupSlider(circleSizeSlider, circleSizeValLabel, engine.getUiSize(), (newVal) -> {
+            engine.setUiSize(newVal);
+            SIZE_FACTOR = newVal * 0.005;
+            resizeCircle();
+        }, "%");
         colCenterStats.percentWidthProperty().bind(widthSlider.valueProperty());
         colLeftStats.percentWidthProperty().bind(widthSlider.valueProperty().multiply(-1).add(100).divide(2));
         colRightStats.percentWidthProperty().bind(widthSlider.valueProperty().multiply(-1).add(100).divide(2));
+
 
         autoBreakToggle.setSelected(engine.isAutoStartBreaks());
         autoBreakToggle.setText(autoBreakToggle.isSelected() ? "ON" : "OFF");
@@ -192,6 +206,7 @@ public class PomodoroController {
             }
         });
 
+
         engine.setOnTick(() -> Platform.runLater(() -> {
             timerLabel.setText(engine.getFormattedTime());
             updateProgressCircle();
@@ -203,6 +218,38 @@ public class PomodoroController {
 
         updateEngineSettings();
         updateUIFromEngine();
+    }
+
+    private void resizeCircle() {
+        double width = stackpaneCircle.getWidth();
+        double height = stackpaneCircle.getHeight();
+        if (width <= 0 || height <= 0) return;
+
+        double size = Math.min(width, height);
+        double radius = size * SIZE_FACTOR;//controla el tamaño del circulo(y del texto)
+
+        if (radius > 50) {
+            circleMain.setRadius(radius);
+
+            progressArc.setRadiusX(radius);
+            progressArc.setRadiusY(radius);
+
+            progressArc.setCenterX(width/2);//NO TOCAR
+            progressArc.setCenterY(radius);
+
+            double scaleFactor = radius / 200.0;//controla el tamaño del texto
+            double scaleButtons = radius / 300.0;
+            timerTextContainer.setScaleX(scaleFactor);
+            timerTextContainer.setScaleY(scaleFactor);
+
+            startPauseBtn.setScaleX(scaleButtons);
+            startPauseBtn.setScaleY(scaleButtons);
+            skipBtn.setScaleX(scaleButtons);
+            skipBtn.setScaleY(scaleButtons);
+            finishBtn.setScaleX(scaleButtons);
+            finishBtn.setScaleY(scaleButtons);
+
+        }
     }
 
     //region data
@@ -221,7 +268,8 @@ public class PomodoroController {
                 autoPomoToggle.isSelected(),
                 countBreakTime.isSelected(),
                 (int)alarmVolumeSlider.getValue(),
-                (int)widthSlider.getValue()
+                (int)widthSlider.getValue(),
+                (int)circleSizeSlider.getValue()
         );
     }
     //endregion
@@ -326,12 +374,10 @@ public class PomodoroController {
 
     @FXML
     private void handleResetTimeSettings() {
-        // Valores por defecto
         workSlider.setValue(25);
         shortSlider.setValue(5);
         longSlider.setValue(15);
         intervalSlider.setValue(4);
-        alarmVolumeSlider.setValue(100);
 
         autoBreakToggle.setSelected(false);
         autoPomoToggle.setSelected(false);
@@ -516,7 +562,7 @@ public class PomodoroController {
 
     private void setupSlider(Slider s, Label l, int v, java.util.function.Consumer<Integer> a, String unit) {
         if (s == null) {
-            System.err.println("[ERROR FXML] Un Slider no se ha inyectado correctamente. Revisa los fx:id.");
+            System.err.println("[ERROR] setupSlider");
             return;
         }
 

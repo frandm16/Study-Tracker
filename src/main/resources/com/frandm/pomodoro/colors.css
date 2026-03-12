@@ -1,6 +1,20 @@
 .root {
 
     -icon-red : #ff7a00;
+
+    -color-bg-default: #172640;
+    -color-fg-default: #eaeaea;
+    -color-bg-subtle: #161b22;
+    -color-border: #d1d1d1;
+    -color-border-subtle-light: rgba(255, 255, 255, 0.1);
+    -text-main: #eaeaea;
+    -text-muted: #94a3b8;
+    -color-accent: #ffb700;
+    -bg-panels: #161b22;
+    -color-hover: rgba(255, 255, 255, 0.05);
+    -color-accent-light: rgba(255, 183, 0, 0.35);
+    -stat-card-secundary-bg: rgba(32, 38, 58, 0.1);
+    -heatmap-high: #ffb700;
 }
 
 .primer-dark {
