@@ -1142,3 +1142,79 @@
 .session-context-menu {
     -fx-background-color: -bg-panels;
 }
+
+/* --- segmented buttons settings --- */
+.segmented-button .toggle-button {
+    -fx-background-radius: 0;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-width: 1 0 1 1;
+
+    -fx-font-size: 15px;
+}
+
+.segmented-button .left-pill {
+    -fx-background-radius: 18 0 0 18;
+    -fx-border-radius: 18 0 0 18;
+}
+
+.segmented-button .right-pill {
+    -fx-background-radius: 0 18 18 0;
+    -fx-border-radius: 0 18 18 0;
+    -fx-border-width: 1 1 1 1;
+}
+
+.segmented-button .toggle-button:hover {
+    -fx-cursor: hand;
+}
+
+.segmented-button .toggle-button:selected {
+    -fx-background-color: -color-accent;
+    -fx-text-fill: -bg-panels;
+    -fx-font-weight: bold;
+
+}
+
+.toggle-switch {
+    -fx-cursor: hand;
+}
+
+.toggle-switch > .thumb-area {
+    -fx-background-color: -color-fg-secundary;
+}
+
+.toggle-switch > .thumb {
+    -fx-background-insets: 2;
+    -fx-background-color: #ffffff;
+}
+
+.toggle-switch:selected > .thumb-area {
+    -fx-background-color: -color-accent;
+}
+
+
+.slider > .thumb {
+    -fx-background-color: #ffffff;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 5, 0, 0, 1);
+}
+
+.slider > .thumb:hover {
+    -fx-scale-x: 1.1;
+    -fx-scale-y: 1.1;
+}
+
+.slider> .track {
+    -fx-background-color: -color-fg-secundary;
+    -fx-background-radius: 5;
+    -fx-background-insets: 6 0 6 0;
+}
+
+.slider > .progress {
+    -fx-background-color: -color-accent;
+    -fx-background-radius: 5;
+    -fx-background-insets: 5 0 5 0;
+}
+
+.slider:disabled {
+    -fx-opacity: 0.5;
+}

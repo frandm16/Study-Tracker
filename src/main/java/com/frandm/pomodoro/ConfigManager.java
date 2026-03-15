@@ -40,9 +40,9 @@ public class ConfigManager {
         File configFile = getConfigFile();
 
         try (OutputStream out = new FileOutputStream(configFile)) {
-            props.store(out, "Pomodoro App User Settings");
+            props.store(out, "Study Tracker Settings");
         } catch (IOException e) {
-            System.err.println("Error saving config file: " + e.getMessage());
+            System.err.println("Error ConfigManager.save: " + e.getMessage());
         }
     }
 
@@ -50,7 +50,6 @@ public class ConfigManager {
         File configFile = getConfigFile();
 
         if (!configFile.exists()) {
-            System.out.println("Cant find config file. Using default configuration.");
             return;
         }
 
@@ -73,7 +72,7 @@ public class ConfigManager {
                     Integer.parseInt(props.getProperty("countdownMins", String.valueOf(engine.getCountdownMins())))
             );
         } catch (IOException | NumberFormatException e) {
-            System.err.println("Error loading config file: " + e.getMessage());
+            System.err.println("Error ConfigManager.load: " + e.getMessage());
         }
     }
 }

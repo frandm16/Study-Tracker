@@ -1,5 +1,7 @@
 package com.frandm.pomodoro;
 
+import atlantafx.base.controls.ProgressSliderSkin;
+import atlantafx.base.controls.ToggleSwitch;
 import atlantafx.base.theme.PrimerDark;
 import atlantafx.base.theme.PrimerLight;
 import javafx.animation.TranslateTransition;
@@ -41,6 +43,11 @@ public class PomodoroController {
     public HBox buttonsHbox;
     public Slider countdownSlider;
     public Label countdownValLabel;
+    public ToggleButton timerModeBtn, pomoModeBtn, countdownModeBtn;
+    public VBox pomoSettingsPane;
+    public VBox countdownSettingsPane;
+    public ToggleSwitch countBreakTime, autoPomoToggle, autoBreakToggle;
+
     //region FXML
     @FXML private GridPane editSessionPane;
     @FXML private ComboBox<String> editTagCombo, editTaskCombo;
@@ -55,7 +62,6 @@ public class PomodoroController {
             alarmVolumeValLabel, widthSliderValLabel, streakLabel, timeThisWeekLabel,
             timeLastMonthLabel, tasksLabel, bestDayLabel, selectedNameLabel;
     @FXML private Button startPauseBtn, skipBtn, finishBtn, menuBtn, statsBtn, plannerBtn, historyBtn, selectTaskBtn;
-    @FXML private ToggleButton autoBreakToggle, autoPomoToggle, countBreakTime;
     @FXML public TextField tagNameInput, fuzzySearchInput;
     @FXML public ColorPicker tagColorInput;
     @FXML public Circle circleMain;
@@ -77,6 +83,8 @@ public class PomodoroController {
     private StatsDashboard statsDashboard;
     private CalendarView calendarView;
     private double SIZE_FACTOR = 0.25;
+
+    private ToggleGroup modeGroup;
 
     private HistoryView historyView;
     private Session sessionToDelete;
@@ -162,37 +170,33 @@ public class PomodoroController {
         colLeftStats.percentWidthProperty().bind(widthSlider.valueProperty().multiply(-1).add(100).divide(2));
         colRightStats.percentWidthProperty().bind(widthSlider.valueProperty().multiply(-1).add(100).divide(2));
 
-
         autoBreakToggle.setSelected(engine.isAutoStartBreaks());
-        autoBreakToggle.setText(autoBreakToggle.isSelected() ? "ON" : "OFF");
-        autoBreakToggle.selectedProperty().addListener((o, ov, nv) -> {
-            autoBreakToggle.setText(nv ? "ON" : "OFF");
-            updateEngineSettings();
-        });
-
         autoPomoToggle.setSelected(engine.isAutoStartPomo());
-        autoPomoToggle.setText(autoPomoToggle.isSelected() ? "ON" : "OFF");
-        autoPomoToggle.selectedProperty().addListener((o, ov, nv) -> {
-            autoPomoToggle.setText(nv ? "ON" : "OFF");
-            updateEngineSettings();
-        });
-
         countBreakTime.setSelected(engine.isCountBreakTime());
-        countBreakTime.setText(countBreakTime.isSelected() ? "ON" : "OFF");
-        countBreakTime.selectedProperty().addListener((_, _, isSelected) -> {
-            countBreakTime.setText(isSelected ? "ON" : "OFF");
-            updateEngineSettings();
-        });
 
-        modeComboBox.getItems().setAll(PomodoroEngine.Mode.values());
-        modeComboBox.setValue(engine.getCurrentMode());
+        modeGroup = new ToggleGroup();
+        pomoModeBtn.setToggleGroup(modeGroup);
+        timerModeBtn.setToggleGroup(modeGroup);
+        countdownModeBtn.setToggleGroup(modeGroup);
 
-        modeComboBox.valueProperty().addListener((obs, oldMode, newMode) -> {
-            if (newMode != null) {
-                engine.setMode(newMode);
-                timerLabel.setText(engine.getFormattedTime());
-                updateUIFromEngine();
-                updateProgressCircle();
+        pomoModeBtn.setUserData(PomodoroEngine.Mode.POMODORO);
+        timerModeBtn.setUserData(PomodoroEngine.Mode.TIMER);
+        countdownModeBtn.setUserData(PomodoroEngine.Mode.COUNTDOWN);
+
+        switch (engine.getCurrentMode()) {
+            case POMODORO -> pomoModeBtn.setSelected(true);
+            case TIMER -> timerModeBtn.setSelected(true);
+            case COUNTDOWN -> countdownModeBtn.setSelected(true);
+        }
+        updateSettingsVisibility(engine.getCurrentMode());
+
+        modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            if (newToggle != null) {
+                PomodoroEngine.Mode selectedMode = (PomodoroEngine.Mode) newToggle.getUserData();
+                engine.setMode(selectedMode);
+                updateSettingsVisibility(selectedMode);
+            } else if (oldToggle != null) {
+                oldToggle.setSelected(true);
             }
         });
         //endregion
@@ -229,7 +233,10 @@ public class PomodoroController {
             updateProgressCircle();
         }));
 
-        engine.setOnStateChange(() -> Platform.runLater(this::updateUIFromEngine));
+        engine.setOnStateChange(() -> Platform.runLater(() -> {
+            updateUIFromEngine();
+            updateModeButtonsAvailability();
+            }));
 
         engine.setOnTimerFinished(() -> Platform.runLater(() -> {
             uiManager.playAlarmSound(engine.getAlarmSoundVolume());
@@ -241,6 +248,40 @@ public class PomodoroController {
 
         updateEngineSettings();
         updateUIFromEngine();
+    }
+
+    private void updateSettingsVisibility(PomodoroEngine.Mode mode) {
+        pomoSettingsPane.setVisible(false);
+        pomoSettingsPane.setManaged(false);
+
+        countdownSettingsPane.setVisible(false);
+        countdownSettingsPane.setManaged(false);
+
+        switch (mode) {
+            case POMODORO -> {
+                pomoSettingsPane.setVisible(true);
+                pomoSettingsPane.setManaged(true);
+            }
+            case COUNTDOWN -> {
+                countdownSettingsPane.setVisible(true);
+                countdownSettingsPane.setManaged(true);
+            }
+            case TIMER -> {
+            }
+        }
+    }
+
+    private void updateModeButtonsAvailability() {
+        if (engine.getCurrentState() != PomodoroEngine.State.MENU) {
+            pomoModeBtn.setDisable(true);
+            timerModeBtn.setDisable(true);
+            countdownModeBtn.setDisable(true);
+            return;
+        }
+
+        pomoModeBtn.setDisable(false);
+        timerModeBtn.setDisable(false);
+        countdownModeBtn.setDisable(false);
     }
 
     private void resizeCircle() {
@@ -288,7 +329,7 @@ public class PomodoroController {
                 (int)alarmVolumeSlider.getValue(),
                 (int)widthSlider.getValue(),
                 (int)circleSizeSlider.getValue(),
-                modeComboBox.getValue(),
+                engine.getCurrentMode(),
                 (int)countdownSlider.getValue()
         );
     }
@@ -595,6 +636,7 @@ public class PomodoroController {
             System.err.println("[ERROR] setupSlider");
             return;
         }
+        s.setSkin(new ProgressSliderSkin(s));
 
         s.setValue(v);
         if (l != null) l.setText(v + unit);

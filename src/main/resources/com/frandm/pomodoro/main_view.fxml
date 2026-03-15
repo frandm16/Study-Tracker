@@ -14,6 +14,8 @@
 <?import javafx.scene.effect.GaussianBlur?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
+
+<?import atlantafx.base.controls.ToggleSwitch?>
 <StackPane fx:id="rootPane" prefHeight="700.0" prefWidth="1000.0"
            stylesheets="@/com/frandm/pomodoro/styles.css"
            styleClass="root-pane"
@@ -337,78 +339,81 @@
             <Separator />
 
             <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" styleClass="settings-tabpane">
-                <Tab text="Timer">
+                <Tab text="General">
                     <ScrollPane fitToWidth="true" styleClass="main-scroll">
                         <VBox spacing="25" style="-fx-padding: 25;">
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="Time (minutes)" styleClass="section-label"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Button onAction="#handleResetTimeSettings" text="Reset" styleClass="reset-button"/>
-                            </HBox>
-
-                            <VBox spacing="8">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Pomodoro"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="workValLabel" text="25" styleClass="val-label"/>
-                                </HBox>
-                                <Slider fx:id="workSlider" min="1" max="180"/>
-                            </VBox>
-
-                            <VBox spacing="8">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Short Break"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="shortValLabel" text="5" styleClass="val-label"/>
-                                </HBox>
-                                <Slider fx:id="shortSlider" min="1" max="25"/>
-                            </VBox>
-
-                            <VBox spacing="8">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Long Break"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="longValLabel" text="15" styleClass="val-label"/>
-                                </HBox>
-                                <Slider fx:id="longSlider" min="1" max="50"/>
-                            </VBox>
-
-                            <VBox spacing="8">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Long Break Interval"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="intervalValLabel" text="4" styleClass="val-label"/>
-                                </HBox>
-                                <Slider fx:id="intervalSlider" min="1" max="20"/>
-                            </VBox>
-
-                            <VBox spacing="15">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Auto Start Breaks" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                    <ToggleButton fx:id="autoBreakToggle" text="OFF" styleClass="toggle-sidebar"/>
-                                </HBox>
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Auto Start Pomodoros" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                    <ToggleButton fx:id="autoPomoToggle" text="OFF" styleClass="toggle-sidebar"/>
-                                </HBox>
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Count Break Time" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                    <ToggleButton fx:id="countBreakTime" text="OFF" styleClass="toggle-sidebar"/>
-                                </HBox>
-                            </VBox>
 
                             <VBox spacing="10">
-                                <Label text="Timer Mode" />
-                                <ComboBox fx:id="modeComboBox" maxWidth="Infinity" />
+                                <Label text="Mode Selector" styleClass="section-label" />
+                                <HBox styleClass="segmented-button" alignment="CENTER" maxWidth="-Infinity">
+                                    <ToggleButton fx:id="pomoModeBtn" text="Pomodoro" styleClass="left-pill" />
+                                    <ToggleButton fx:id="timerModeBtn" text="Timer" />
+                                    <ToggleButton fx:id="countdownModeBtn" text="Countdown" styleClass="right-pill" />
+                                </HBox>
                             </VBox>
 
-                            <VBox spacing="5">
+                            <VBox fx:id="pomoSettingsPane" spacing="25" visible="false" managed="false">
                                 <HBox alignment="CENTER_LEFT">
-                                    <Label text="Countdown Timer" />
-                                    <Pane HBox.hgrow="ALWAYS" />
-                                    <Label fx:id="countdownValLabel" text="10" styleClass="val-label" />
+                                    <Label text="Time (minutes)" styleClass="section-label"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button onAction="#handleResetTimeSettings" text="Reset" styleClass="reset-button"/>
                                 </HBox>
-                                <Slider fx:id="countdownSlider" min="1" max="180" />
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Pomodoro"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="workValLabel" text="25" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="workSlider" min="1" max="180" styleClass="progress-slider"/>
+                                </VBox>
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Short Break"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="shortValLabel" text="5" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="shortSlider" min="1" max="25"/>
+                                </VBox>
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Long Break"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="longValLabel" text="15" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="longSlider" min="1" max="50"/>
+                                </VBox>
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Long Break Interval"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="intervalValLabel" text="4" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="intervalSlider" min="1" max="20"/>
+                                </VBox>
+                                <VBox spacing="15">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Auto Start Breaks" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                        <ToggleSwitch fx:id="autoBreakToggle" styleClass="toggle-switch"/>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Auto Start Pomodoros" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                        <ToggleSwitch fx:id="autoPomoToggle" styleClass="toggle-switch"/>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Count Break Time" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                        <ToggleSwitch fx:id="countBreakTime" styleClass="toggle-switch"/>
+                                    </HBox>
+                                </VBox>
+                            </VBox>
+                            <VBox fx:id="countdownSettingsPane" spacing="25" visible="false" managed="false">
+                                <VBox spacing="5">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Countdown Timer" />
+                                        <Pane HBox.hgrow="ALWAYS" />
+                                        <Label fx:id="countdownValLabel" text="10" styleClass="val-label" />
+                                    </HBox>
+                                    <Slider fx:id="countdownSlider" min="1" max="180" />
+                                </VBox>
                             </VBox>
                         </VBox>
                     </ScrollPane>
