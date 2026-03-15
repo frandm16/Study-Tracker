@@ -186,7 +186,8 @@ public class CalendarView extends VBox {
         root.setStyle("-fx-background-color: -color-bg-overlay; -fx-border-color: -color-border-default; -fx-border-radius: 12; -fx-background-radius: 12;");
 
         Label titleLabel = new Label(existingSession == null ? "Schedule Session" : "Edit Scheduled Session");
-        titleLabel.getStyleClass().add("calendar-month-label");
+        titleLabel.getStyleClass().add("title-schedule-session");
+        titleLabel.setStyle("-fx-background-color: -color-bg-overlay;");
 
         TextField txtTitle = new TextField();
         txtTitle.setPromptText("Title here...");

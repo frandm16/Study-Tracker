@@ -4,7 +4,7 @@ import atlantafx.base.controls.ProgressSliderSkin;
 import atlantafx.base.controls.ToggleSwitch;
 import atlantafx.base.theme.PrimerDark;
 import atlantafx.base.theme.PrimerLight;
-import javafx.animation.TranslateTransition;
+import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -47,6 +47,11 @@ public class PomodoroController {
     public VBox pomoSettingsPane;
     public VBox countdownSettingsPane;
     public ToggleSwitch countBreakTime, autoPomoToggle, autoBreakToggle;
+    public VBox settingsBox;
+    public StackPane setupBox;
+    public StackPane editSessionBox;
+    public StackPane summaryBox;
+    public Region confirmBox;
 
     //region FXML
     @FXML private GridPane editSessionPane;
@@ -366,8 +371,7 @@ public class PomodoroController {
             summaryTitle.setText("Session Title");
         }
 
-        summaryPane.setVisible(true);
-        summaryPane.setManaged(true);
+        toggleSummary();
     }
 
     @FXML
@@ -385,27 +389,14 @@ public class PomodoroController {
         refreshDatabaseData();
 
         resetFullApp();
-        closeSummary();
+        toggleSummary();
         NotificationManager.show("Session finished", "Saved session", NotificationManager.NotificationType.SUCCESS);
     }
 
     @FXML
     private void handleDiscardSummary() {
         resetFullApp();
-        closeSummary();
-    }
-
-    @FXML
-    private void closeSummary() {
-        summaryPane.setVisible(false);
-        summaryPane.setManaged(false);
-
-        summaryTitle.clear();
-        summaryDesc.clear();
-        currentRating = 0;
-        updateStarsUI();
-
-        updateUIFromEngine();
+        toggleSummary();
     }
     //endregion
 
@@ -562,12 +553,15 @@ public class PomodoroController {
     @FXML
     private void toggleSettings() {
         boolean opening = !settingsPane.isVisible();
-        settingsPane.setVisible(opening);
-        settingsPane.setManaged(opening);
+        if (opening) {
+            Animations.show(settingsPane, settingsBox, null);
 
-        updateEngineSettings();
-        ConfigManager.save(engine);
-
+        } else {
+            Animations.hide(settingsPane, settingsBox, () -> {
+                updateEngineSettings();
+                ConfigManager.save(engine);
+            });
+        }
     }
 
     private void applyTheme() {
@@ -575,8 +569,6 @@ public class PomodoroController {
         if (isDarkMode) {
             Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
             rootPane.getStyleClass().add("primer-dark");
-            //Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
-            //rootPane.getStyleClass().add("primer-electric-blue");
         } else {
             Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
             rootPane.getStyleClass().add("primer-light");
@@ -588,8 +580,6 @@ public class PomodoroController {
     @FXML
     void toggleSetup() {
         boolean opening = !setupPane.isVisible();
-        setupPane.setVisible(opening);
-        setupPane.setManaged(opening);
 
         if (opening) {
             fuzzySearchInput.clear();
@@ -600,12 +590,19 @@ public class PomodoroController {
 
             setupManager.updateFuzzyResults("", fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected);
 
-            Platform.runLater(fuzzySearchInput::requestFocus);
+            Animations.show(setupPane, setupBox, () -> Platform.runLater(fuzzySearchInput::requestFocus));
+        } else {
+            Animations.hide(setupPane, setupBox, null);
         }
     }
 
     @FXML
     private void toggleSummary() {
+        if(!summaryPane.isVisible()) {
+            Animations.show(summaryPane, summaryBox, null);
+        } else {
+            Animations.hide(summaryPane, summaryBox, null);
+        }
 
     }
 
@@ -811,9 +808,11 @@ public class PomodoroController {
     }
 
     public void toggleConfirmDelete(){
-        boolean isVisible = confirmOverlay.isVisible();
-        confirmOverlay.setVisible(!isVisible);
-        confirmOverlay.setManaged(!isVisible);
+       if(!confirmOverlay.isVisible()){
+           Animations.show(confirmOverlay, confirmBox, null);
+       } else {
+           Animations.hide(confirmOverlay, confirmBox, null);
+       }
     }
 
     @FXML
@@ -919,9 +918,11 @@ public class PomodoroController {
 
     @FXML
     public void toggleEditSession() {
-        boolean isVisible = editSessionPane.isVisible();
-        editSessionPane.setVisible(!isVisible);
-        editSessionPane.setManaged(!isVisible);
+        if (!editSessionPane.isVisible()) {
+            Animations.show(editSessionPane, editSessionBox, null);
+        } else {
+            Animations.hide(editSessionPane, editSessionBox, null);
+        }
     }
 
     private void setupEditComboListeners() {

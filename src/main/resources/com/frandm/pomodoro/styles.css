@@ -673,6 +673,11 @@
     -fx-border-width: 1 0 0 0;
 }
 
+.title-schedule-session {
+    -fx-text-fill: #818181;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
 
 .calendar-session-block {
     -fx-background-radius: 6;
@@ -748,14 +753,20 @@
     -fx-background-color: -color-border;
 }
 
-.calendar-button-add .context-menu {
+.context-menu {
     -fx-background-color: -bg-panels;
-    -fx-border-color: -color-border-subtle;
-    -fx-border-radius: 5;
     -fx-background-radius: 6;
 }
-.calendar-button-add .menu-item {
+
+.menu-item {
     -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-padding: 8 15;
+    -fx-background-radius: 10;
+}
+
+.menu-item:hover {
+    -fx-background-color: -color-border-subtle-light;
     -fx-cursor: hand;
     -fx-padding: 8 15;
     -fx-background-radius: 10;
@@ -1139,9 +1150,6 @@
     -fx-padding: 10;
 }
 
-.session-context-menu {
-    -fx-background-color: -bg-panels;
-}
 
 /* --- segmented buttons settings --- */
 .segmented-button .toggle-button {
