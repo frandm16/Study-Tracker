@@ -371,6 +371,8 @@ public class PomodoroController {
 
     @FXML
     private void handleDiscardSummary() {
+        currentRating=0;
+        updateStarsUI();
         resetFullApp();
         toggleSummary();
     }

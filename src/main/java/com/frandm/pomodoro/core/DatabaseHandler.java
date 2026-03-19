@@ -13,9 +13,18 @@ import java.util.*;
 public class DatabaseHandler {
     private static final String FOLDER_NAME = ".StudyTracker";
     private static final String DB_NAME = "StudyTrackerDatabase.db";
+    private static final String DB_NAME_DEV = "StudyTrackerDatabase_DEV.db";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public static String getDatabaseUrl() {
+
+        //dev mode
+        String devMode = System.getProperty("dev_mode");
+        if ("true".equals(devMode)) {
+            return "jdbc:sqlite:" + DB_NAME_DEV;
+        }
+
+        //normal mode
         String userHome = System.getProperty("user.home");
         File configDir = new File(userHome, FOLDER_NAME);
 

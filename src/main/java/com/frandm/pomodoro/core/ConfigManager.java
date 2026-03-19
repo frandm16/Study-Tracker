@@ -8,6 +8,13 @@ public class ConfigManager {
     private static final String FOLDER_NAME = ".StudyTracker";
     private static final String FILE_NAME = "settings.properties";
     private static File getConfigFile() {
+        // dev mode
+        String devMode = System.getProperty("dev_mode");
+        if ("true".equals(devMode)) {
+            return new File("settings_dev.properties");
+        }
+
+        //normal mode
         String userHome = System.getProperty("user.home");
         File configDir = new File(userHome, FOLDER_NAME);
 

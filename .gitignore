@@ -42,3 +42,5 @@ $RECYCLE.BIN/
 
 jre/
 jdk/
+
+settings_dev.properties
