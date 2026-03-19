@@ -35,7 +35,7 @@ The app manages its own storage environment in your user directory:
 
 ---
 
-## 🛠️ Installation & Setup
+## 💻 Installation & Setup
 
 1. **Clone the Repository:**
    ```bash
@@ -43,4 +43,14 @@ The app manages its own storage environment in your user directory:
 
 ---
 
-*Made by Fran Dorado*
+## 🛠️ Built With
+*   **Java 25**
+*   **JavaFX 23**
+*   **AtlantaFX**
+*   **SQLite**
+*   **Ikonli**
+*   **FuzzyWuzzy**
+
+---
+
+Developed by Fran Dorado

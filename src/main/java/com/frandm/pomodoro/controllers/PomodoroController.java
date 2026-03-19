@@ -361,6 +361,8 @@ public class PomodoroController {
 
         DatabaseHandler.saveSession(taskId, summaryTitle.getText(), summaryDesc.getText(), engine.getRealMinutesElapsed(), startDate, LocalDateTime.now(), currentRating);
         refreshDatabaseData();
+        currentRating=0;
+        updateStarsUI();
 
         resetFullApp();
         toggleSummary();
