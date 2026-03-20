@@ -3,6 +3,8 @@ WORKDIR /app
 
 COPY pom.xml .
 
+RUN mkdir frontend
+
 COPY backend/pom.xml ./backend/
 COPY backend/src ./backend/src
 
