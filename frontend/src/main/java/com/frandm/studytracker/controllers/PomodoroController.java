@@ -683,7 +683,9 @@ public class PomodoroController {
             empty.setStyle("-fx-font-style: italic; -fx-opacity: 0.6;");
             list.getChildren().add(empty);
         } else {
-            todaySessions.sort(Comparator.comparing(s -> (LocalDateTime) s.get("start_time")));
+            todaySessions.sort(Comparator.comparing(s ->
+                    s.get("startTime") != null ? LocalDateTime.parse(s.get("startTime").toString()) : LocalDateTime.MIN
+            ));
 
             for (Map<String, Object> session : todaySessions) {
                 list.getChildren().add(createMiniSessionItem(session));
@@ -700,7 +702,12 @@ public class PomodoroController {
         item.setPadding(new Insets(8));
         item.getStyleClass().add("menu-session-item");
 
-        String color = (String) session.getOrDefault("tag_color", "#ffffff");
+        Map<?, ?> task = (Map<?, ?>) session.get("task");
+        Map<?, ?> tag = task != null ? (Map<?, ?>) task.get("tag") : null;
+        String color = tag != null ? (String) tag.get("color") : "#ffffff";
+        String tagName = tag != null ? (String) tag.get("name") : null;
+        String taskName = task != null ? (String) task.get("name") : null;
+
         Region colorIndicator = new Region();
         colorIndicator.setPrefSize(4, 20);
         colorIndicator.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 2;");
@@ -709,9 +716,15 @@ public class PomodoroController {
         Label lblTitle = new Label((String) session.get("title"));
         lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
-        LocalDateTime start = (LocalDateTime) session.get("start_time");
-        LocalDateTime end = (LocalDateTime) session.get("end_time");
-        Label lblTime = new Label(start.format(DateTimeFormatter.ofPattern("HH:mm")) + " - " + end.format(DateTimeFormatter.ofPattern("HH:mm")));
+        LocalDateTime start = session.get("startTime") != null ?
+                LocalDateTime.parse(session.get("startTime").toString()) : null;
+        LocalDateTime end = session.get("endTime") != null ?
+                LocalDateTime.parse(session.get("endTime").toString()) : null;
+
+        String timeText = (start != null && end != null) ?
+                start.format(DateTimeFormatter.ofPattern("HH:mm")) + " - " +
+                        end.format(DateTimeFormatter.ofPattern("HH:mm")) : "";
+        Label lblTime = new Label(timeText);
         lblTime.setStyle("-fx-font-size: 13px; -fx-opacity: 0.7;");
 
         Region spacer = new Region();
@@ -725,11 +738,7 @@ public class PomodoroController {
 
         btnPlay.setGraphic(playIcon);
         btnPlay.getStyleClass().add("play-schedule-session");
-        btnPlay.setOnAction(_ -> {
-           String tag = (String)session.getOrDefault("tag_name", null);
-           String task = (String)session.getOrDefault("task_name", null);
-            playScheduleSession(tag, task);
-        });
+        btnPlay.setOnAction(_ -> playScheduleSession(tagName, taskName));
 
 
         info.getChildren().addAll(lblTitle, lblTime);

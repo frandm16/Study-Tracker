@@ -28,6 +28,7 @@ public class CalendarTab extends VBox {
     private final Pane[] dayColumns = new Pane[7];
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
     private final DateTimeFormatter dbFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final double MIN_BLOCK_HEIGHT = 20.0;
 
     public CalendarTab(LogsController logsController, LogsView logsView) {
         this.currentWeekStart = LocalDate.now().with(java.time.DayOfWeek.MONDAY);
@@ -159,8 +160,20 @@ public class CalendarTab extends VBox {
         Map<Integer, List<Map<String, Object>>> dayMap = new HashMap<>();
 
         for (Map<String, Object> s : sessions) {
-            LocalDateTime start = (LocalDateTime) s.get("start_time");
-            if (start == null) continue;
+            String startStr = getStartTime(s);
+            if (startStr == null) continue;
+            LocalDateTime start = LocalDateTime.parse(startStr);
+            s.put("start_time", start);
+            String endStr = getEndTime(s);
+            if (endStr != null) s.put("end_time", LocalDateTime.parse(endStr));
+
+            String taskName = getTaskName(s);
+            String tagName = getTagName(s);
+            String tagColor = getTagColor(s);
+            s.put("task_name", taskName);
+            s.put("tag_name", tagName);
+            s.put("tag_color", tagColor);
+
             int dayIdx = start.toLocalDate().getDayOfWeek().getValue() - 1;
             dayMap.computeIfAbsent(dayIdx, _ -> new ArrayList<>()).add(s);
         }
@@ -212,7 +225,7 @@ public class CalendarTab extends VBox {
         block.setOnMouseClicked(e -> {
             if (e.getClickCount() == 1) {
                 Session sessionObj = new Session(
-                        (int) s.get("id"),
+                        ((Number) s.get("id")).intValue(),
                         (String) s.get("tag_name"),
                         (String) s.get("tag_color"),
                         (String) s.get("task_name"),
@@ -222,7 +235,8 @@ public class CalendarTab extends VBox {
                         start.format(dbFormatter),
                         finalEnd.format(dbFormatter)
                 );
-                sessionObj.setRating((int) s.getOrDefault("rating", 0));
+                Object ratingObj = s.get("rating");
+                sessionObj.setRating(ratingObj != null ? ((Number) ratingObj).intValue() : 0);
 
                 ContextMenu menu = new ContextMenu();
                 menu.getStyleClass().add("session-context-menu");
@@ -287,11 +301,20 @@ public class CalendarTab extends VBox {
         LocalDateTime sEnd = (LocalDateTime) s.get("end_time");
         if (sEnd == null) sEnd = sStart.plusMinutes(25);
 
+        double sTop = (sStart.getHour() * ROW_HEIGHT) + (sStart.getMinute() * (ROW_HEIGHT / 60.0));
+        double sBottom = Math.max(sTop + MIN_BLOCK_HEIGHT,
+                (sEnd.getHour() * ROW_HEIGHT) + (sEnd.getMinute() * (ROW_HEIGHT / 60.0)));
+
         for (Map<String, Object> other : group) {
             LocalDateTime oStart = (LocalDateTime) other.get("start_time");
             LocalDateTime oEnd = (LocalDateTime) other.get("end_time");
             if (oEnd == null) oEnd = oStart.plusMinutes(25);
-            if (sStart.isBefore(oEnd) && sEnd.isAfter(oStart)) return true;
+
+            double oTop = (oStart.getHour() * ROW_HEIGHT) + (oStart.getMinute() * (ROW_HEIGHT / 60.0));
+            double oBottom = Math.max(oTop + MIN_BLOCK_HEIGHT,
+                    (oEnd.getHour() * ROW_HEIGHT) + (oEnd.getMinute() * (ROW_HEIGHT / 60.0)));
+
+            if (sTop < oBottom && sBottom > oTop) return true;
         }
         return false;
     }
@@ -343,4 +366,37 @@ public class CalendarTab extends VBox {
         double currentHour = LocalTime.now().getHour();
         scrollPane.setVvalue((currentHour > 3) ? (currentHour - 3) / 24.0 : 0);
     }
+
+    //region getters
+    private String getStartTime(Map<String, Object> s) {
+        Object v = s.get("startDate");
+        if (v == null) v = s.get("startTime");
+        return v != null ? v.toString() : null;
+    }
+
+    private String getEndTime(Map<String, Object> s) {
+        Object v = s.get("endDate");
+        if (v == null) v = s.get("endTime");
+        return v != null ? v.toString() : null;
+    }
+
+    private String getTaskName(Map<String, Object> s) {
+        Map<?, ?> task = (Map<?, ?>) s.get("task");
+        return task != null ? (String) task.get("name") : "";
+    }
+
+    private String getTagName(Map<String, Object> s) {
+        Map<?, ?> task = (Map<?, ?>) s.get("task");
+        if (task == null) return "";
+        Map<?, ?> tag = (Map<?, ?>) task.get("tag");
+        return tag != null ? (String) tag.get("name") : "";
+    }
+
+    private String getTagColor(Map<String, Object> s) {
+        Map<?, ?> task = (Map<?, ?>) s.get("task");
+        if (task == null) return "#94a3b8";
+        Map<?, ?> tag = (Map<?, ?>) task.get("tag");
+        return tag != null ? (String) tag.get("color") : "#94a3b8";
+    }
+    //endregion
 }

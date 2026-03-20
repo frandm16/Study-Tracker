@@ -27,7 +27,7 @@ public class HistoryTab extends VBox {
     private final int PAGE_SIZE = 50;
     private LocalDate lastDate = null;
     private VBox lastSessionsContainer = null;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS");
 
     public HistoryTab(LogsController logsController) {
         this.logsController = logsController;
@@ -68,6 +68,19 @@ public class HistoryTab extends VBox {
         this.getChildren().addAll(filterBar, historyScroll);
         setupFilterListeners();
         refreshFilters();
+    }
+
+    private static LocalDateTime parseDate(String date) {
+        if (date == null) return null;
+        try {
+            return LocalDateTime.parse(date);
+        } catch (Exception e) {
+            try {
+                return LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            } catch (Exception e2) {
+                return null;
+            }
+        }
     }
 
     private void setupFilterListeners() {
@@ -130,16 +143,18 @@ public class HistoryTab extends VBox {
             Map<String, Object> result = ApiClient.getSessions(currentTag, currentTask, currentOffset / PAGE_SIZE);
             List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
             sessions = content.stream().map(m -> {
+                Map<?, ?> task = (Map<?, ?>) m.get("task");
+                Map<?, ?> tag = (Map<?, ?>) task.get("tag");
                 Session s = new Session(
                         ((Number) m.get("id")).intValue(),
-                        (String) m.get("tag"),
-                        (String) m.get("tagColor"),
-                        (String) m.get("task"),
+                        tag != null ? (String) tag.get("name") : "",
+                        tag != null ? (String) tag.get("color") : "#ffffff",
+                        (String) task.get("name"),
                         (String) m.get("title"),
                         (String) m.get("description"),
                         ((Number) m.get("totalMinutes")).intValue(),
-                        (String) m.get("startDate"),
-                        (String) m.get("endDate")
+                        m.get("startDate") != null ? m.get("startDate").toString() : null,
+                        m.get("endDate") != null ? m.get("endDate").toString() : null
                 );
                 if (m.get("rating") != null) s.setRating(((Number) m.get("rating")).intValue());
                 return s;
@@ -152,7 +167,7 @@ public class HistoryTab extends VBox {
 
         if (currentOffset == 0) {
             boolean hasTodaySessions = !sessions.isEmpty() &&
-                    LocalDateTime.parse(sessions.getFirst().getStartDate(), DATE_FORMATTER).toLocalDate().equals(today);
+                    parseDate(sessions.getFirst().getStartDate()).toLocalDate().equals(today);
             if (!hasTodaySessions) {
                 createNewDayBlock(today, 0, "No sessions registered for today");
                 lastDate = today;
@@ -170,10 +185,10 @@ public class HistoryTab extends VBox {
         }
 
         for (Session s : sessions) {
-            LocalDate sessionDate = LocalDateTime.parse(s.getStartDate(), DATE_FORMATTER).toLocalDate();
+            LocalDate sessionDate = parseDate(s.getStartDate()).toLocalDate();
             if (!sessionDate.equals(lastDate)) {
                 long totalMinutes = sessions.stream()
-                        .filter(se -> LocalDateTime.parse(se.getStartDate(), DATE_FORMATTER).toLocalDate().equals(sessionDate))
+                        .filter(se -> parseDate(se.getStartDate()).toLocalDate().equals(sessionDate))
                         .mapToLong(Session::getTotalMinutes)
                         .sum();
                 createNewDayBlock(sessionDate, totalMinutes, null);
