@@ -1,6 +1,6 @@
 package com.frandm.pomodoro.ui.views.logs;
 
-import com.frandm.pomodoro.core.DatabaseHandler;
+import com.frandm.pomodoro.database.DatabaseHandler;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;

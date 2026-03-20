@@ -1,6 +1,7 @@
 package com.frandm.pomodoro.core;
 
 import com.frandm.pomodoro.controllers.PomodoroController;
+import com.frandm.pomodoro.database.DatabaseHandler;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;

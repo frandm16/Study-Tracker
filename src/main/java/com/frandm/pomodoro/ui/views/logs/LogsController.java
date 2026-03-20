@@ -1,7 +1,7 @@
 package com.frandm.pomodoro.ui.views.logs;
 
 import com.frandm.pomodoro.controllers.PomodoroController;
-import com.frandm.pomodoro.core.DatabaseHandler;
+import com.frandm.pomodoro.database.DatabaseHandler;
 import com.frandm.pomodoro.models.Session;
 import com.frandm.pomodoro.core.NotificationManager;
 import javafx.scene.control.*;

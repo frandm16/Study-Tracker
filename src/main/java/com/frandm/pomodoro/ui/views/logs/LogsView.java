@@ -1,19 +1,8 @@
 package com.frandm.pomodoro.ui.views.logs;
 
-import com.frandm.pomodoro.models.Session;
 import com.frandm.pomodoro.controllers.PomodoroController;
-import com.frandm.pomodoro.core.DatabaseHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.geometry.Side;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.util.Duration;
-import org.kordamp.ikonli.javafx.FontIcon;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
 
 public class LogsView extends StackPane {
 

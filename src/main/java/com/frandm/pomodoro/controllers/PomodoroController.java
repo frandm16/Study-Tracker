@@ -5,6 +5,8 @@ import atlantafx.base.controls.ToggleSwitch;
 import atlantafx.base.theme.PrimerDark;
 import atlantafx.base.theme.PrimerLight;
 import com.frandm.pomodoro.core.*;
+import com.frandm.pomodoro.database.DatabaseHandler;
+import com.frandm.pomodoro.database.MigrationManager;
 import com.frandm.pomodoro.models.Session;
 import com.frandm.pomodoro.ui.util.Animations;
 import com.frandm.pomodoro.ui.util.UIManager;
@@ -22,7 +24,6 @@ import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Arc;
@@ -105,6 +106,7 @@ public class PomodoroController {
     //region initialize
     private void initializeCoreSystems() {
         DatabaseHandler.initializeDatabase();
+        MigrationManager.checkAndMigrate();
         // ---------------- TEST ---------------------
         //DatabaseHandler.generateRandomPomodoros();
         //DatabaseHandler.generateRandomSchedule();

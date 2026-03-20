@@ -1,6 +1,6 @@
 package com.frandm.pomodoro.ui.views.logs;
 
-import com.frandm.pomodoro.core.DatabaseHandler;
+import com.frandm.pomodoro.database.DatabaseHandler;
 import com.frandm.pomodoro.models.Session;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

@@ -1,7 +1,7 @@
 package com.frandm.pomodoro.ui.views;
 
 import com.frandm.pomodoro.controllers.PomodoroController;
-import com.frandm.pomodoro.core.DatabaseHandler;
+import com.frandm.pomodoro.database.DatabaseHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;

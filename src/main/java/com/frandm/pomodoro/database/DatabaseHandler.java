@@ -1,4 +1,4 @@
-package com.frandm.pomodoro.core;
+package com.frandm.pomodoro.database;
 
 import com.frandm.pomodoro.models.Session;
 import javafx.collections.FXCollections;
@@ -16,73 +16,54 @@ public class DatabaseHandler {
     private static final String DB_NAME_DEV = "StudyTrackerDatabase_DEV.db";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public static String getDatabaseUrl() {
 
-        //dev mode
-        String devMode = System.getProperty("dev_mode");
-        if ("true".equals(devMode)) {
-            return "jdbc:sqlite:" + DB_NAME_DEV;
-        }
-
-        //normal mode
-        String userHome = System.getProperty("user.home");
-        File configDir = new File(userHome, FOLDER_NAME);
-
-        if (!configDir.exists()) {
-            boolean success = configDir.mkdirs();
-            if(!success){
-                System.err.println("Error creating config folder");
-            }
-        }
-
-        File dbFile = new File(configDir, DB_NAME);
-        return "jdbc:sqlite:" + dbFile.toPath().toAbsolutePath();
-    }
 //region core functions
     public static void initializeDatabase() {
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              Statement stmt = conn.createStatement()) {
 
-            //tabla tag
+            boolean isPG = ConnectionFactory.isPostgres(conn);
+            String autoId = isPG ? "SERIAL PRIMARY KEY" : "INTEGER PRIMARY KEY AUTOINCREMENT";
+            String dateTimeType = isPG ? "TIMESTAMP" : "DATETIME";
+            String textType = isPG ? "TEXT" : "TEXT";
+
+            // TABLA TAGS
             stmt.execute("CREATE TABLE IF NOT EXISTS tags (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    "name TEXT NOT NULL UNIQUE, " +
-                    "color TEXT DEFAULT '#ffffff', " +
+                    "id " + autoId + ", " +
+                    "name " + textType + " NOT NULL UNIQUE, " +
+                    "color " + textType + " DEFAULT '#ffffff', " +
                     "is_archived INTEGER DEFAULT 0, " +
                     "weekly_goal_min INTEGER DEFAULT 0)");
 
-            //tabla task
+            // TABLA TASKS
             stmt.execute("CREATE TABLE IF NOT EXISTS tasks (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    "tag_id INTEGER NOT NULL, " +
-                    "name TEXT NOT NULL, " +
+                    "id " + autoId + ", " +
+                    "tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE, " +
+                    "name " + textType + " NOT NULL, " +
                     "is_favorite INTEGER DEFAULT 0, " +
                     "weekly_goal_min INTEGER DEFAULT 0, " +
-                    "FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE, " +
                     "UNIQUE(tag_id, name))");
 
-            //tabla sessions
+            // TABLA SESSIONS
             stmt.execute("CREATE TABLE IF NOT EXISTS sessions (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    "task_id INTEGER NOT NULL, " +
-                    "title TEXT, " +
-                    "description TEXT, " +
+                    "id " + autoId + ", " +
+                    "task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE, " +
+                    "title " + textType + ", " +
+                    "description " + textType + ", " +
                     "total_minutes INTEGER NOT NULL, " +
-                    "start_date DATETIME, " +
-                    "end_date DATETIME, " +
+                    "start_date " + dateTimeType + ", " +
+                    "end_date " + dateTimeType + ", " +
                     "rating INTEGER DEFAULT 0, " +
-                    "is_favorite INTEGER DEFAULT 0, " +
-                    "FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE)");
+                    "is_favorite INTEGER DEFAULT 0)");
 
-            //tabla schedule sessions
+            // TABLA SCHEDULED SESSIONS
             stmt.execute("CREATE TABLE IF NOT EXISTS scheduled_sessions (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    "task_id INTEGER NOT NULL, " +
-                    "title TEXT, " +
-                    "start_time DATETIME NOT NULL, " +
-                    "end_time DATETIME NOT NULL, " +
-                    "is_completed INTEGER DEFAULT 0, " +
-                    "FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE)");
+                    "id " + autoId + ", " +
+                    "task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE, " +
+                    "title " + textType + ", " +
+                    "start_time " + dateTimeType + " NOT NULL, " +
+                    "end_time " + dateTimeType + " NOT NULL, " +
+                    "is_completed INTEGER DEFAULT 0)");
 
         } catch (SQLException e) {
             System.err.println("Error initializeDatabase: " + e.getMessage());
@@ -91,7 +72,7 @@ public class DatabaseHandler {
 
     public static void saveSession(int taskId, String title, String desc, int mins, LocalDateTime start, LocalDateTime end, int rating) {
         String sql = "INSERT INTO sessions(task_id, title, description, total_minutes, start_date, end_date, rating) VALUES(?, ?, ?, ?, ?, ?, ?)";
-        executeUpdates(sql, taskId, title, desc, mins, start.format(DATE_FORMATTER), end.format(DATE_FORMATTER), rating);
+        executeUpdates(sql, taskId, title, desc, mins, Timestamp.valueOf(start), Timestamp.valueOf(end), rating);
     }
 
     public static void deleteSession(int sessionId) {
@@ -100,8 +81,11 @@ public class DatabaseHandler {
     }
 
     public static int getOrCreateTask(String tagName, String tagColor, String taskName) {
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl())) {
-            String sqlTag = "INSERT OR IGNORE INTO tags(name, color) VALUES(?, ?)";
+        try (Connection conn = ConnectionFactory.getConnection()) {
+            boolean isPG = ConnectionFactory.isPostgres(conn);
+            String sqlTag = isPG ?
+                    "INSERT INTO tags(name, color) VALUES(?, ?) ON CONFLICT (name) DO NOTHING" :
+                    "INSERT OR IGNORE INTO tags(name, color) VALUES(?, ?)";
             try (PreparedStatement pst = conn.prepareStatement(sqlTag)) {
                 pst.setString(1, tagName);
                 pst.setString(2, tagColor);
@@ -139,7 +123,7 @@ public class DatabaseHandler {
     public static List<String> getTasksByTag(String tagName) {
         List<String> tasks = new ArrayList<>();
         String sql = "SELECT t.name FROM tasks t JOIN tags tg ON t.tag_id = tg.id WHERE tg.name = ? ORDER BY t.name ASC";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, tagName);
             ResultSet rs = pstmt.executeQuery();
@@ -203,7 +187,7 @@ public class DatabaseHandler {
     public static Map<String, String> getTagColors() {
         Map<String, String> colors = new LinkedHashMap<>();
         String sql = "SELECT name, color FROM tags WHERE is_archived = 0 ORDER BY name ASC";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) colors.put(rs.getString("name"), rs.getString("color"));
@@ -215,7 +199,7 @@ public class DatabaseHandler {
         Map<String, List<String>> map = new HashMap<>();
         String sql = "SELECT tg.name as tag_name, t.name as task_name FROM tasks t " +
                 "JOIN tags tg ON t.tag_id = tg.id WHERE tg.is_archived = 0";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -232,7 +216,7 @@ public class DatabaseHandler {
                 "s.rating, s.is_favorite " +
                 "FROM sessions s JOIN tasks t ON s.task_id = t.id " +
                 "JOIN tags tg ON t.tag_id = tg.id ORDER BY s.start_date DESC";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -253,7 +237,7 @@ public class DatabaseHandler {
                 "s.rating, s.is_favorite, t.name AS task_name, tg.name AS tag_name, tg.color AS tag_color " +
                 "FROM sessions s JOIN tasks t ON s.task_id = t.id JOIN tags tg ON t.tag_id = tg.id " +
                 "WHERE tg.name = ? ORDER BY s.is_favorite DESC, s.start_date DESC LIMIT ? OFFSET ?";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             preparedStatement.setString(1, tag);
             preparedStatement.setInt(2, limit);
@@ -273,28 +257,40 @@ public class DatabaseHandler {
 
     public static Map<LocalDate, Integer> getMinutesPerDayLastYear() {
         Map<LocalDate, Integer> data = new HashMap<>();
+        String lastYear = LocalDate.now().minusYears(1).toString();
         String sql = "SELECT date(start_date) as day, SUM(total_minutes) as total FROM sessions " +
-                "WHERE start_date >= date('now', '-1 year') GROUP BY day";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                "WHERE start_date >= ? GROUP BY day";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, lastYear);
+            ResultSet rs = pstmt.executeQuery();
+
             while (rs.next()) {
                 String dayStr = rs.getString("day");
-                if (dayStr != null) data.put(LocalDate.parse(dayStr), rs.getInt("total"));
+                if (dayStr != null) data.put(LocalDate.parse(dayStr.substring(0, 10)), rs.getInt("total"));
             }
         } catch (SQLException e) { System.err.println("Error heatmap: " + e.getMessage()); }
         return data;
     }
 
     public static double getTagGoalProgress(String tagName) {
+        LocalDate monday = LocalDate.now().with(java.time.DayOfWeek.MONDAY);
+        String startOfWeek = monday.toString() + " 00:00:00";
+
         String sql = "SELECT tg.weekly_goal_min, SUM(s.total_minutes) as total FROM tags tg " +
                 "LEFT JOIN tasks t ON tg.id = t.tag_id " +
                 "LEFT JOIN sessions s ON t.id = s.task_id " +
-                "WHERE tg.name = ? AND s.start_date >= date('now', 'weekday 0', '-7 days')";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            preparedStatement.setString(1, tagName);
-            ResultSet rs = preparedStatement.executeQuery();
+                "WHERE tg.name = ? AND s.start_date >= ? " +
+                "GROUP BY tg.weekly_goal_min";
+
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, tagName);
+            pstmt.setString(2, startOfWeek);
+
+            ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 int goal = rs.getInt("weekly_goal_min");
                 int total = rs.getInt("total");
@@ -311,7 +307,7 @@ public class DatabaseHandler {
                 "FROM sessions s JOIN tasks t ON s.task_id = t.id " +
                 "JOIN tags tg ON t.tag_id = tg.id WHERE tg.name = ? " +
                 "GROUP BY t.name ORDER BY total DESC";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             preparedStatement.setString(1, tag);
             ResultSet rs = preparedStatement.executeQuery();
@@ -326,7 +322,7 @@ public class DatabaseHandler {
                 "s.title, s.description, s.total_minutes, s.start_date, s.end_date, s.rating, s.is_favorite " +
                 "FROM sessions s JOIN tasks t ON s.task_id = t.id JOIN tags tg ON t.tag_id = tg.id " +
                 "WHERE date(s.start_date) = ? ORDER BY s.start_date ASC";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             preparedStatement.setString(1, date.toString());
             ResultSet rs = preparedStatement.executeQuery();
@@ -352,7 +348,7 @@ public class DatabaseHandler {
                 "JOIN tags tg ON t.tag_id = tg.id " +
                 "ORDER BY s.start_date DESC LIMIT ? OFFSET ?";
 
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
 
             preparedStatement.setInt(1, limit);
@@ -394,11 +390,6 @@ public class DatabaseHandler {
         executeUpdates(sql, taskId, title, start.format(DATE_FORMATTER), end.format(DATE_FORMATTER));
     }
 
-    public static void saveDeadline(String title, LocalDateTime dueDate, int priority, Integer tagId, Integer taskId) {
-        String sql = "INSERT INTO deadlines(title, due_date, priority, tag_id, task_id) VALUES(?, ?, ?, ?, ?)";
-        executeUpdates(sql, title, dueDate.format(DATE_FORMATTER), priority, tagId, taskId);
-    }
-
     public static List<Map<String, Object>> getScheduledSessions(LocalDate start, LocalDate end) {
         List<Map<String, Object>> list = new ArrayList<>();
         String sql = "SELECT ss.*, t.name as task_name, tg.name as tag_name, tg.color as tag_color " +
@@ -407,7 +398,7 @@ public class DatabaseHandler {
                 "JOIN tags tg ON t.tag_id = tg.id " +
                 "WHERE date(ss.start_time) BETWEEN ? AND ? AND ss.is_completed = 0";
 
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             preparedStatement.setString(1, start.toString());
             preparedStatement.setString(2, end.toString());
@@ -448,9 +439,8 @@ public class DatabaseHandler {
     }
 
     public static void cleanCorruptSessions() {
-        String sql = "DELETE FROM scheduled_sessions WHERE tag_id IS NULL OR " +
-                "tag_id NOT IN (SELECT id FROM tags)";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        String sql = "DELETE FROM scheduled_sessions WHERE task_id NOT IN (SELECT id FROM tasks)";
+        try (Connection conn = ConnectionFactory.getConnection();
              Statement stmt = conn.createStatement()) {
             int deleted = stmt.executeUpdate(sql);
             if (deleted > 0) {
@@ -464,28 +454,6 @@ public class DatabaseHandler {
     public static void markScheduledAsCompleted(int scheduledId) {
         String sql = "UPDATE scheduled_sessions SET is_completed = 1 WHERE id = ?";
         executeUpdates(sql, scheduledId);
-    }
-
-    public static List<Map<String, Object>> getDeadlines(LocalDate start, LocalDate end) {
-        List<Map<String, Object>> list = new ArrayList<>();
-        String sql = "SELECT d.*, tg.color as tag_color FROM deadlines d " +
-                "LEFT JOIN tags tg ON d.tag_id = tg.id " +
-                "WHERE date(d.due_date) BETWEEN ? AND ?";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            preparedStatement.setString(1, start.toString());
-            preparedStatement.setString(2, end.toString());
-            ResultSet rs = preparedStatement.executeQuery();
-            while (rs.next()) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("title", rs.getString("title"));
-                map.put("due_date", LocalDateTime.parse(rs.getString("due_date"), DATE_FORMATTER));
-                map.put("color", rs.getString("tag_color") != null ? rs.getString("tag_color") : "#ff4757");
-                map.put("priority", rs.getInt("priority"));
-                list.add(map);
-            }
-        } catch (SQLException e) { System.err.println("Error getDeadlines: " + e.getMessage()); }
-        return list;
     }
 
     public static List<Map<String, Object>> getScheduleSessionsForToday() {
@@ -502,7 +470,7 @@ public class DatabaseHandler {
 
 //region utils
 private static void executeUpdates(String sql, Object... params) {
-    try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+    try (Connection conn = ConnectionFactory.getConnection();
          PreparedStatement pst = conn.prepareStatement(sql)) {
 
         for (int i = 0; i < params.length; i++) {
@@ -523,7 +491,7 @@ private static void executeUpdates(String sql, Object... params) {
         String[] tags = {"Trabajo", "Estudios", "Personal", "Salud", "Ocio", "Proyectos"};
         String[] colors = {"#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6", "#e67e22"};
 
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl())) {
+        try (Connection conn = ConnectionFactory.getConnection()) {
             conn.setAutoCommit(false);
 
             for (int i = 0; i < 365; i++) {
@@ -581,7 +549,7 @@ private static void executeUpdates(String sql, Object... params) {
         List<String> tagList = new ArrayList<>(currentData.keySet());
         String[] titles = {"Sesión Intensa", "Enfoque Deep Work", "Sprint de Tareas", "Avance Crítico", "Práctica Pro", "Estudio de Módulo"};
 
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl())) {
+        try (Connection conn = ConnectionFactory.getConnection()) {
             conn.setAutoCommit(false);
 
             for (int i = -4; i <= 10; i++) {
@@ -639,7 +607,7 @@ private static void executeUpdates(String sql, Object... params) {
 
         sql.append("ORDER BY s.start_date DESC LIMIT ? OFFSET ?");
 
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
             int paramIdx = 1;
@@ -685,7 +653,7 @@ private static void executeUpdates(String sql, Object... params) {
                 "JOIN tags tg ON t.tag_id = tg.id " +
                 "WHERE date(s.start_date) BETWEEN ? AND ?";
 
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+        try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             preparedStatement.setString(1, start.toString());
             preparedStatement.setString(2, end.toString());
