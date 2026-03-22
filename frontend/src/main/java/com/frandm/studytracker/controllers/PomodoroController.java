@@ -9,7 +9,7 @@ import com.frandm.studytracker.core.*;
 import com.frandm.studytracker.models.Session;
 import com.frandm.studytracker.ui.util.Animations;
 import com.frandm.studytracker.ui.util.UIManager;
-import com.frandm.studytracker.ui.views.PlannerView;
+import com.frandm.studytracker.ui.views.planner.PlannerController;
 import com.frandm.studytracker.ui.views.logs.LogsView;
 import com.frandm.studytracker.ui.views.StatsDashboard;
 import javafx.application.Application;
@@ -29,7 +29,6 @@ import javafx.scene.shape.Arc;
 import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -76,7 +75,7 @@ public class PomodoroController {
     public ScrollPane statsContainer;
 
     private StatsDashboard statsDashboard;
-    private PlannerView plannerView;
+    private PlannerController plannerController;
     private LogsView logsView;
 
     private double SIZE_FACTOR = 0.25;
@@ -111,6 +110,7 @@ public class PomodoroController {
         // ---------------- TEST ---------------------
         // ApiClient.generateRandomPomodoros();
         // ApiClient.generateRandomSchedule();
+        // ApiClient.generateRandomDeadlines();
         // -------------------------------------------
         ConfigManager.load(engine);
         refreshDatabaseData();
@@ -120,9 +120,9 @@ public class PomodoroController {
 
     private void setupViews() {
         //planner view
-        plannerView = new PlannerView(this);
-        plannerContainer.getChildren().setAll(plannerView);
-        VBox.setVgrow(plannerView, Priority.ALWAYS);
+        plannerController = new PlannerController(this);
+        plannerContainer.getChildren().setAll(plannerController.getView());
+        VBox.setVgrow(plannerContainer, Priority.ALWAYS);
 
         // logs view
         logsView = new LogsView(this);
@@ -420,8 +420,7 @@ public class PomodoroController {
         if (clickedBtn == menuBtn) {
             uiManager.switchPanels(getActivePanel(), mainContainer);
         } else if (clickedBtn == plannerBtn) {
-            plannerView.refresh();
-            plannerView.scrollToCurrentTime();
+            plannerController.refresh();
             uiManager.switchPanels(getActivePanel(), plannerContainer);
         } else if (clickedBtn == statsBtn) {
             statsDashboard.refresh();

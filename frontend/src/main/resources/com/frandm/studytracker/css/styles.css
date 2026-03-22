@@ -1350,3 +1350,108 @@
     -fx-text-fill: -text-muted;
     -fx-font-size: 20px;
 }
+
+/* --- daily view --- */
+
+.daily-tab {
+    -fx-background-color: -color-bg-default;
+}
+
+.planner-nav-bar {
+    -fx-padding: 15 10;
+    -fx-spacing: 15;
+}
+
+.planner-date-label {
+    -fx-text-fill: -text-main;
+}
+
+.daily-content-wrapper {
+    -fx-spacing: 30;
+}
+
+.daily-container {
+    -fx-spacing: 10;
+}
+
+.planner-scroll-pane {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+}
+
+.planner-row-base {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 10;
+    -fx-padding: 15;
+    -fx-spacing: 15;
+    -fx-effect: dropshadow(three-pass-box, -shadow-default, 10, 0, 0, 0);
+}
+
+.row-info-container {
+    -fx-spacing: 2;
+}
+
+.row-title {
+    -fx-text-fill: -text-main;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.section-header {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.empty-state-label {
+    -fx-padding: 30;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-style: dashed;
+    -fx-border-radius: 8;
+    -fx-text-fill: -text-muted;
+}
+
+.planner-badge {
+    -fx-padding: 4 10;
+    -fx-background-radius: 15;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-border-color: rgba(255, 255, 255, 0.1);
+    -fx-border-radius: 15;
+}
+
+.badge-container {
+    -fx-spacing: 8;
+}
+
+.badge-time {
+    -fx-background-color: -stat-card-secundary-bg;
+    -fx-text-fill: -text-main;
+}
+
+.badge-tag {
+    -fx-background-color: -color-accent;
+    -fx-text-fill: -color-fg-secundary;
+}
+
+.deadline-row .ikonli-font-icon {
+    -fx-icon-color: -icon-main;
+    -fx-icon-size: 16px;
+}
+
+.event-row {
+    -fx-border-width: 0 0 0 4;
+    -fx-background-radius: 8;
+}
+
+.calendar-button-icon {
+    -fx-background-color: transparent;
+}
+
+.calendar-button-icon .ikonli-font-icon {
+    -fx-icon-color: -icon-subtle;
+}
+
+.calendar-button-icon:hover .ikonli-font-icon {
+    -fx-icon-color: -color-accent;
+}
