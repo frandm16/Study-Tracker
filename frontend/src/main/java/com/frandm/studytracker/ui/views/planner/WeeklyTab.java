@@ -279,7 +279,7 @@ public class WeeklyTab extends VBox {
     private VBox createSessionBlock(String title, String tag, String color, LocalDateTime start, LocalDateTime end, double blockHeight) {
         VBox sessionBlock = new VBox(2);
         sessionBlock.getStyleClass().add("calendar-session-block");
-        sessionBlock.setStyle("-fx-border-color: " + color + "; -fx-background-color: " + color + "40; -fx-border-width: 0 0 0 3; -fx-background-radius: 4; -fx-border-radius: 0 4 4 0;");
+        sessionBlock.setStyle("-fx-border-color: " + color + "; -fx-background-color: " + color + "70; -fx-border-width: 0 0 0 3; -fx-background-radius: 4; -fx-border-radius: 4;");
 
         Label titleLabel = new Label(title);
         titleLabel.getStyleClass().add("calendar-session-task");
