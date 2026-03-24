@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Popup;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -260,7 +261,7 @@ public class WeeklyTab extends VBox {
 
         String color = s.getOrDefault("tag_color", "#94a3b8").toString();
         double height = Duration.between(start, end).toMinutes() * (ROW_HEIGHT / 60.0);
-        VBox block = createSessionBlock(title != null && !title.isEmpty() ? title : taskName, tagName, color, start, end, height);
+        HBox block = createSessionBlock(title != null && !title.isEmpty() ? title : taskName, tagName, color, start, end, height);
 
         block.setOnMouseClicked(e -> {
             showPopup(s, start.toLocalDate(), e.getScreenX(), e.getScreenY(), start.getHour(), start.getMinute(), true);
@@ -276,24 +277,44 @@ public class WeeklyTab extends VBox {
         dayColumns[dayIdx].getChildren().add(block);
     }
 
-    private VBox createSessionBlock(String title, String tag, String color, LocalDateTime start, LocalDateTime end, double blockHeight) {
-        VBox sessionBlock = new VBox(2);
+    private HBox createSessionBlock(String title, String tag, String color, LocalDateTime start, LocalDateTime end, double blockHeight) {
+        HBox sessionBlock = new HBox(2);
         sessionBlock.getStyleClass().add("calendar-session-block");
-        sessionBlock.setStyle("-fx-border-color: " + color + "; -fx-background-color: " + color + "70; -fx-border-width: 0 0 0 3; -fx-background-radius: 4; -fx-border-radius: 4;");
+        // variable -session-color
+        sessionBlock.setStyle("-session-bg-color: " + color + "50; -session-color: " + color + ";");
 
+        Region colorBar = new Region();
+        colorBar.getStyleClass().add("session-color-bar");
+
+        VBox contenido = new VBox();
+        contenido.getStyleClass().add("session-content-container");
+
+        // titulo
         Label titleLabel = new Label(title);
-        titleLabel.getStyleClass().add("calendar-session-task");
-        titleLabel.setStyle("-fx-font-weight: bold;");
+        titleLabel.getStyleClass().add("session-title");
+
+        // hora inicio - hora final
+        HBox timeContainer = new HBox();
+        timeContainer.getStyleClass().add("session-time-container");
+        FontIcon timeIcon = new FontIcon("mdi2c-clock-outline");
+        timeIcon.getStyleClass().add("session-time-icon");
+        String timeRange = start.format(timeFormatter) + " - " + end.format(timeFormatter);
+        Label timeLabel = new Label(timeRange);
+        timeLabel.getStyleClass().add("session-time-label");
+        timeContainer.getChildren().addAll(timeIcon, timeLabel);
+
+        // tag
         Label tagLabel = new Label(tag);
-        tagLabel.getStyleClass().add("calendar-session-task");
-        tagLabel.setStyle("-fx-opacity: 0.9;");
+        tagLabel.getStyleClass().add("session-tag-badge");
 
-        if (blockHeight < 40) {
-            tagLabel.setVisible(false);
-            tagLabel.setManaged(false);
-        }
+        // visibilidad reducida si es muy corta la session
+        tagLabel.setVisible(blockHeight > 65);
+        tagLabel.setManaged(blockHeight > 65);
+        timeContainer.setVisible(blockHeight > 45);
+        timeContainer.setManaged(blockHeight > 45);
 
-        sessionBlock.getChildren().addAll(titleLabel, tagLabel);
+        contenido.getChildren().addAll(titleLabel, timeContainer, tagLabel);
+        sessionBlock.getChildren().addAll(colorBar, contenido);
         Tooltip.install(sessionBlock, new Tooltip(title + "\n" + start.format(timeFormatter) + " - " + end.format(timeFormatter)));
         return sessionBlock;
     }
