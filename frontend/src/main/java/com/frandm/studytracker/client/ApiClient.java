@@ -36,7 +36,11 @@ public class ApiClient {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();
-        return http.send(req, HttpResponse.BodyHandlers.ofString()).body();
+        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("POST " + path + " failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
+        return response.body();
     }
 
     private static String put(String path, Object body) throws Exception {
@@ -92,7 +96,9 @@ public class ApiClient {
     }
 
     public static List<Map<String, Object>> getSessionsByRange(String start, String end) throws Exception {
-        return mapper.readValue(get("/sessions/range?start=" + start + "&end=" + end), new TypeReference<>() {});
+        String Start = start.replace(" ", "%20");
+        String End = end.replace(" ", "%20");
+        return mapper.readValue(get("/sessions/range?start=" + Start + "&end=" + End), new TypeReference<>() {});
     }
 
     public static void saveSession(String tagName, String tagColor, String taskName,
@@ -211,7 +217,7 @@ public class ApiClient {
                         ));
 
                         currentTime = end.plusMinutes(random.nextInt(30) + 5);
-                        if (currentTime.getHour() >= 23) break;
+                        if (currentTime.getHour() == 23) break;
                     }
                 }
             }
@@ -262,7 +268,7 @@ public class ApiClient {
                                 end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
                         currentTime = end.plusMinutes(15 + random.nextInt(31));
-                        if (currentTime.getHour() >= 23) break;
+                        if (currentTime.getHour() == 23) break;
                     }
                 }
             }
@@ -279,18 +285,23 @@ public class ApiClient {
         String[] titles = {"Final Exam", "Project Delivery", "Lab Report", "Essay Submission", "Quiz", "Thesis Draft"};
         String[] urgencies = {"High", "Medium", "Low"};
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        final int daysBefore = 25;
+        final int daysAfter = 25;
 
         try {
             String tasksJson = get("/tasks/all");
             List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
             if (taskList.isEmpty()) return;
 
-            for (int i = 0; i < 15; i++) {
+            for (int offset = -daysBefore; offset < daysAfter; offset++) {
                 Map<String, Object> task = taskList.get(random.nextInt(taskList.size()));
                 Map<String, Object> tagMap = (Map<String, Object>) task.get("tag");
 
-                LocalDate dueDate = today.plusDays(random.nextInt(21) - 7);
-                LocalDateTime dueDateTime = dueDate.atTime(random.nextInt(24), 0);
+                LocalDate dueDate = today.plusDays(offset);
+                boolean allDay = random.nextDouble() < 0.35;
+                LocalDateTime dueDateTime = allDay
+                        ? dueDate.atStartOfDay()
+                        : dueDate.atTime(8 + random.nextInt(13), random.nextBoolean() ? 0 : 30);
 
                 saveDeadline(
                         (String) tagMap.get("name"),
@@ -300,10 +311,9 @@ public class ApiClient {
                         "Generated automatic deadline for testing UI",
                         urgencies[random.nextInt(urgencies.length)],
                         dueDateTime.format(fmt),
-                        random.nextBoolean()
+                        allDay
                 );
             }
-            System.out.println("[generateRandomDeadlines] Done ✓");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -326,15 +336,26 @@ public class ApiClient {
         ));
     }
 
-    public static void toggleDeadline(long id) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/deadlines/" + id + "/toggle"))
-                .method("PATCH", HttpRequest.BodyPublishers.noBody())
+    public static void updateDeadline(long id, String tagName, String tagColor, String taskName,
+                                      String title, String description, String urgency,
+                                      String dueDate, boolean allDay) throws Exception {
+        var req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/deadlines/" + id))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(Map.of(
+                        "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
+                        "title", title, "description", description, "urgency", urgency,
+                        "dueDate", dueDate, "allDay", allDay
+                ))))
                 .build();
-        http.send(req, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("Deadline update failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
     }
 
     public static void deleteDeadline(long id) throws Exception {
         delete("/deadlines/" + id);
     }
+
 }
