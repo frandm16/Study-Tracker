@@ -697,6 +697,42 @@
     -fx-background-color: rgba(239, 68, 68, 0.14);
 }
 
+.calendar-deadline-pill {
+    -fx-background-color: -color-border-subtle-light;
+    -fx-background-radius: 6;
+    -fx-padding: 4 0 4 8;
+    -fx-cursor: hand;
+}
+
+.calendar-deadline-icon {
+    -fx-icon-size: 14;
+    -fx-icon-color: -text-main;
+}
+
+.session-deadline-bar {
+    -fx-background-color: -text-main;
+    -fx-min-width: 4;
+    -fx-pref-width: 4;
+    -fx-max-width: 4;
+    -fx-background-radius: 6;
+
+}
+
+.calendar-deadline-content {
+    -fx-alignment: center-left;
+}
+
+.calendar-deadline-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-main;
+}
+
+.calendar-deadline-meta {
+    -fx-font-size: 11px;
+    -fx-text-fill: -text-muted;
+}
+
 .calendar-cell {
     -fx-border-color: -color-border-subtle;
     -fx-border-width: 0 0 0.5 0.5;

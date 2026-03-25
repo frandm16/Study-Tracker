@@ -27,16 +27,15 @@ public class WeeklyTab extends VBox {
     private Popup activePopup = null;
     private long lastPopupCloseTime = 0;
     private final double ROW_HEIGHT = 60.0;
-    private static final double ALL_DAY_SECTION_MIN_HEIGHT = 44.0;
-    private static final double ALL_DAY_PILL_HEIGHT = 24.0;
-    private static final double TIMED_DEADLINE_HEIGHT = 24.0;
+    private static final double ALL_DAY_MIN_HEIGHT = 30.0;
+    private static final double DEADLINE_HEIGHT = 28.0;
     private final Pane[] dayColumns = new Pane[7];
     private final Pane[] deadlineLayers = new Pane[7];
     private final VBox[] allDayDeadlineContainers = new VBox[7];
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
     private static final double MIN_BLOCK_HEIGHT = 30.0;
     private Runnable refreshAction = () -> {};
-    private double allDaySectionHeight = ALL_DAY_SECTION_MIN_HEIGHT;
+    private double allDaySectionHeight = ALL_DAY_MIN_HEIGHT;
 
     public WeeklyTab(PomodoroController controller) {
         this.currentWeekStart = LocalDate.now().with(DayOfWeek.MONDAY);
@@ -294,7 +293,7 @@ public class WeeklyTab extends VBox {
                     .count();
             maxPerDay = Math.max(maxPerDay, count);
         }
-        allDaySectionHeight = Math.max(ALL_DAY_SECTION_MIN_HEIGHT, 10 + (maxPerDay * ALL_DAY_PILL_HEIGHT) + 10);
+        allDaySectionHeight = Math.max(ALL_DAY_MIN_HEIGHT,(maxPerDay * DEADLINE_HEIGHT)+5);
 
     }
 
@@ -312,12 +311,12 @@ public class WeeklyTab extends VBox {
         Map<String, Object> deadlineData = new HashMap<>(deadline);
         deadlineData.put("item_type", "deadline");
         deadlineData.put("draw_start", due);
-        deadlineData.put("draw_end", due.plusMinutes((long) Math.ceil(TIMED_DEADLINE_HEIGHT)));
+        deadlineData.put("draw_end", due.plusMinutes((long) Math.ceil(DEADLINE_HEIGHT)));
         deadlineData.put("task_name", String.valueOf(deadline.getOrDefault("task_name", deadline.getOrDefault("taskName", deadline.getOrDefault("title", "Deadline")))));
         deadlineData.put("tag_name", String.valueOf(deadline.getOrDefault("tag_name", deadline.getOrDefault("tagName", ""))));
         deadlineData.put("tag_color", String.valueOf(deadline.getOrDefault("tag_color", deadline.getOrDefault("tagColor", "#ef4444"))));
         deadlineData.put("full_start", due);
-        deadlineData.put("full_end", due.plusMinutes((long) Math.ceil(TIMED_DEADLINE_HEIGHT)));
+        deadlineData.put("full_end", due.plusMinutes((long) Math.ceil(DEADLINE_HEIGHT)));
         addSessionToMap(dayMap, deadlineData);
     }
 
@@ -338,31 +337,30 @@ public class WeeklyTab extends VBox {
     private HBox createDeadlinePill(Map<String, Object> deadline, boolean allDay, LocalDateTime date) {
         String title = String.valueOf(deadline.getOrDefault("title", deadline.getOrDefault("task_name", deadline.getOrDefault("taskName", "Deadline"))));
         String urgency = String.valueOf(deadline.getOrDefault("urgency", "Medium"));
-        HBox pill = new HBox(6);
+        HBox pill = new HBox(8);
         pill.setAlignment(Pos.CENTER_LEFT);
-        pill.getStyleClass().addAll("calendar-deadline-pill", "calendar-session-block");
-        if (allDay) pill.getStyleClass().add("calendar-all-day-pill");
-        pill.setStyle("-session-bg-color: #ef444430; -session-color: #ef4444;");
+        pill.getStyleClass().add("calendar-deadline-pill");
+
+        FontIcon icon = new FontIcon("mdi2a-alarm");
+        icon.getStyleClass().add("calendar-deadline-icon");
 
         Region colorBar = new Region();
-        colorBar.getStyleClass().add("session-color-bar");
+        colorBar.getStyleClass().add("session-deadline-bar");
 
         VBox content = new VBox(2);
-        content.getStyleClass().add("session-content-container");
+        content.getStyleClass().add("calendar-deadline-content");
 
-        HBox titleRow = new HBox(5);
+        HBox titleRow = new HBox(6);
         titleRow.setAlignment(Pos.CENTER_LEFT);
-        FontIcon icon = new FontIcon("mdi2a-alarm");
-        icon.getStyleClass().add("session-time-icon");
         Label label = new Label(title);
-        label.getStyleClass().add("session-title");
-        titleRow.getChildren().addAll(icon, label);
+        label.getStyleClass().add("calendar-deadline-title");
+        titleRow.getChildren().addAll(label);
 
         Label meta = new Label(allDay ? "All day • " + urgency : date.format(timeFormatter) + " • " + urgency);
-        meta.getStyleClass().add("session-time-label");
-        content.getChildren().addAll(titleRow, meta);
+        meta.getStyleClass().add("calendar-deadline-meta");
+        content.getChildren().addAll(titleRow);
 
-        pill.getChildren().addAll(colorBar, content);
+        pill.getChildren().addAll(icon, colorBar, content);
         Tooltip.install(pill, new Tooltip(buildDeadlineTooltip(deadline, allDay, date)));
         pill.setOnMouseClicked(e -> {
             showDeadlinePopup(deadline, e.getScreenX(), e.getScreenY());
@@ -395,13 +393,13 @@ public class WeeklyTab extends VBox {
         LocalDateTime sStart = (LocalDateTime) s.get("draw_start");
         LocalDateTime sEnd = (LocalDateTime) s.get("draw_end");
         double sTop = (sStart.getHour() * ROW_HEIGHT) + (sStart.getMinute() * (ROW_HEIGHT / 60.0));
-        double minHeight = "deadline".equals(s.get("item_type")) ? TIMED_DEADLINE_HEIGHT : MIN_BLOCK_HEIGHT;
+        double minHeight = "deadline".equals(s.get("item_type")) ? DEADLINE_HEIGHT : MIN_BLOCK_HEIGHT;
         double sBottom = Math.max(sTop + minHeight, (sEnd.getHour() * ROW_HEIGHT) + (sEnd.getMinute() * (ROW_HEIGHT / 60.0)));
         for (Map<String, Object> other : group) {
             LocalDateTime oStart = (LocalDateTime) other.get("draw_start");
             LocalDateTime oEnd = (LocalDateTime) other.get("draw_end");
             double oTop = (oStart.getHour() * ROW_HEIGHT) + (oStart.getMinute() * (ROW_HEIGHT / 60.0));
-            double otherMinHeight = "deadline".equals(other.get("item_type")) ? TIMED_DEADLINE_HEIGHT : MIN_BLOCK_HEIGHT;
+            double otherMinHeight = "deadline".equals(other.get("item_type")) ? DEADLINE_HEIGHT : MIN_BLOCK_HEIGHT;
             double oBottom = Math.max(oTop + otherMinHeight, (oEnd.getHour() * ROW_HEIGHT) + (oEnd.getMinute() * (ROW_HEIGHT / 60.0)));
 
             if (sTop < oBottom && sBottom > oTop) {
@@ -425,7 +423,7 @@ public class WeeklyTab extends VBox {
         HBox pill = createDeadlinePill(deadline, false, date);
         double y = (date.getHour() * ROW_HEIGHT) + (date.getMinute() * (ROW_HEIGHT / 60.0));
         pill.setLayoutY(y);
-        pill.setPrefHeight(TIMED_DEADLINE_HEIGHT);
+        pill.setPrefHeight(DEADLINE_HEIGHT);
         pill.prefWidthProperty().bind(deadlineLayers[dayIdx].widthProperty().divide(total).subtract(4));
         pill.layoutXProperty().bind(deadlineLayers[dayIdx].widthProperty().divide(total).multiply(pos).add(2));
         deadlineLayers[dayIdx].getChildren().add(pill);

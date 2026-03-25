@@ -159,8 +159,8 @@ public class DailyTab extends VBox {
         HBox badges = new HBox(8);
         badges.setAlignment(Pos.CENTER_RIGHT);
         badges.getChildren().addAll(
-                badge(allDay ? "All day" : formatTime(due), MaterialDesignC.CLOCK_OUTLINE, "badge-time"),
                 badge(urgency, null, urgencyBadgeClass(urgency)),
+                badge(allDay ? "All day" : formatTime(due), MaterialDesignC.CLOCK_OUTLINE, "badge-time"),
                 badge(String.valueOf(data.getOrDefault("tagName", data.getOrDefault("tag_name", ""))), null, "badge-tag")
         );
 
