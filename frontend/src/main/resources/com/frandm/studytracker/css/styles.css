@@ -9,7 +9,7 @@
     -fx-font-size: 100px;
     -fx-font-weight: bold;
     -fx-text-fill: -text-main;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 0, 0, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 3, 0, 2, 2);
     -fx-padding: 0;
 }
 
@@ -25,9 +25,9 @@
 }
 
 .state-label {
-    -fx-font-size: 22px;
+    -fx-font-size: 24px;
     -fx-text-fill: -text-main;
-    -fx-opacity: 0.8;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 3, 0, 1, 1);
     -fx-letter-spacing: 4px;
 }
 
@@ -678,7 +678,7 @@
 }
 
 .calendar-nottoday-circle {
-    -fx-fill: transparent;
+    -fx-fill: -color-bg-calendar;
 }
 
 .calendar-hour-label {
@@ -1555,10 +1555,9 @@
     -fx-border-width: 0 1 0 0;
 }
 
-
 .day-column-wrapper {
-    -fx-background-color: rgba(255, 255, 255, 0.01);
-    -fx-background-radius: 15;
+    -fx-background-color: -color-bg-calendar;
+    -fx-background-radius: 6;
 }
 
 

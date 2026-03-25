@@ -40,6 +40,7 @@
     -color-long-break-secundary: #a2b2fd;
     -color-border-subtle: rgba(255, 255, 255);
     -color-border-subtle-light: rgba(255, 255, 255, 0.1);
+    -color-bg-calendar: rgba(255, 255, 255, 0.01);
     -color-border: #d1d1d1;
     -shadow-default:  rgba(0, 0, 0, 0.34);
 
@@ -85,6 +86,7 @@
     -color-long-break-secundary: #7030b0;
     -color-border-subtle: rgba(228, 163, 179, 0.6);
     -color-border-subtle-light: rgba(228, 163, 179, 0.2);
+    -color-bg-calendar:rgba(228, 163, 179, 0.05);
     -color-border: #c07888;
     -shadow-default: rgba(100, 30, 50, 0.15);
 
@@ -130,6 +132,8 @@
     -color-long-break-secundary: #a0b0ff;
     -color-border-subtle: rgba(0, 212, 255, 0.6);
     -color-border-subtle-light: rgba(0, 212, 255, 0.15);
+    -color-bg-calendar:rgba(0, 212, 255, 0.01);
+
     -color-border: #00d4ff;
     -shadow-default: rgba(0, 0, 0, 0.6);
 
@@ -176,6 +180,8 @@
 
     -color-border-subtle: rgba(203, 166, 247, 0.4);
     -color-border-subtle-light: rgba(203, 166, 247, 0.12);
+    -color-bg-calendar:rgba(203, 166, 247, 0.01);
+
     -color-border: #b4befe;
     -shadow-default: rgba(0, 0, 0, 0.5);
 
@@ -223,6 +229,8 @@
 
     -color-border-subtle: rgba(255, 124, 42, 0.4);
     -color-border-subtle-light: rgba(255, 124, 42, 0.12);
+    -color-bg-calendar:rgba(255, 124, 42, 0.01);
+
     -color-border: #ff7c2a;
     -shadow-default: rgba(0, 0, 0, 0.5);
 
@@ -269,6 +277,8 @@
     -color-long-break-secundary: #ff80c0;
     -color-border-subtle: rgba(176, 96, 255, 0.5);
     -color-border-subtle-light: rgba(176, 96, 255, 0.15);
+    -color-bg-calendar:rgba(176, 96, 255, 0.01);
+
     -color-border: #b060ff;
     -shadow-default: rgba(0, 0, 0, 0.6);
 

@@ -211,7 +211,7 @@ public class ApiClient {
                         ));
 
                         currentTime = end.plusMinutes(random.nextInt(30) + 5);
-                        if (currentTime.getHour() >= 23) break;
+                        if (currentTime.getHour() == 23) break;
                     }
                 }
             }
@@ -262,7 +262,7 @@ public class ApiClient {
                                 end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
                         currentTime = end.plusMinutes(15 + random.nextInt(31));
-                        if (currentTime.getHour() >= 23) break;
+                        if (currentTime.getHour() == 23) break;
                     }
                 }
             }
@@ -303,7 +303,6 @@ public class ApiClient {
                         random.nextBoolean()
                 );
             }
-            System.out.println("[generateRandomDeadlines] Done ✓");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -326,15 +325,4 @@ public class ApiClient {
         ));
     }
 
-    public static void toggleDeadline(long id) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/deadlines/" + id + "/toggle"))
-                .method("PATCH", HttpRequest.BodyPublishers.noBody())
-                .build();
-        http.send(req, HttpResponse.BodyHandlers.ofString());
-    }
-
-    public static void deleteDeadline(long id) throws Exception {
-        delete("/deadlines/" + id);
-    }
 }

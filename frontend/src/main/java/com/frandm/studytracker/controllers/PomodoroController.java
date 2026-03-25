@@ -529,8 +529,8 @@ public class PomodoroController {
 
         switch (mode) {
             case POMODORO -> updatePomodoroUI(logical);
-            case TIMER -> updateTimerUI();
-            case COUNTDOWN -> updateCountdownUI();
+            case TIMER -> updateTimerUI(logical);
+            case COUNTDOWN -> updateCountdownUI(logical);
         }
     }
 
@@ -539,27 +539,41 @@ public class PomodoroController {
             case WORK, MENU -> {
                 uiManager.animateCircleColor(circleMain, "-color-work");
                 String text = (logical == PomodoroEngine.State.MENU) ? "Pomodoro" : "Pomodoro - #" + (engine.getSessionCounter() + 1);
-                applyStyle(text, "-color-work-secundary");
+                applyStyle(text, "-color-work-secundary", true);
             }
             case SHORT_BREAK -> {
                 uiManager.animateCircleColor(circleMain, "-color-break");
-                applyStyle("Short Break", "-color-break-secundary");
+                applyStyle("Short Break", "-color-break-secundary", true);
             }
             case LONG_BREAK -> {
                 uiManager.animateCircleColor(circleMain, "-color-long-break");
-                applyStyle("Long Break", "-color-long-break-secundary");
+                applyStyle("Long Break", "-color-long-break-secundary", true);
             }
         }
     }
 
-    private void updateTimerUI() {
+    private void updateTimerUI(PomodoroEngine.State logical) {
         uiManager.animateCircleColor(circleMain, "-color-work");
-        applyStyle("Timer", "-color-work-secundary");
+        switch (logical) {
+            case MENU -> {
+                applyStyle("Timer", "-color-work-secundary", true);
+            }
+            case WORK -> {
+                applyStyle("Timer", "-color-work-secundary", false);
+            }
+        }
     }
 
-    private void updateCountdownUI() {
+    private void updateCountdownUI(PomodoroEngine.State logical) {
         uiManager.animateCircleColor(circleMain, "-color-work");
-        applyStyle("Countdown", "-color-work-secundary");
+        switch (logical) {
+            case MENU -> {
+                applyStyle("Countdown", "-color-work-secundary", true);
+            }
+            case WORK -> {
+                applyStyle("Countdown", "-color-work-secundary", false);
+            }
+        }
     }
 
     private void updateProgressCircle() {
@@ -902,9 +916,11 @@ public class PomodoroController {
         }
     }
 
-    private void applyStyle(String labelText, String colorVar) {
+    private void applyStyle(String labelText, String colorVar, boolean opacity) {
         stateLabel.setText(labelText);
         stateLabel.setStyle("-fx-text-fill: " + colorVar + ";");
+        stateLabel.setVisible(opacity);
+        stateLabel.setManaged(opacity);
         progressArc.setStyle("-fx-stroke: " + colorVar + ";");
         timerLabel.setStyle("-fx-text-fill: " + colorVar + ";");
     }
