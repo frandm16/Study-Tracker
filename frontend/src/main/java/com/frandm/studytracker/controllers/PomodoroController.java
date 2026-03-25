@@ -9,7 +9,7 @@ import com.frandm.studytracker.core.*;
 import com.frandm.studytracker.models.Session;
 import com.frandm.studytracker.ui.util.Animations;
 import com.frandm.studytracker.ui.util.UIManager;
-import com.frandm.studytracker.ui.views.PlannerView;
+import com.frandm.studytracker.ui.views.planner.PlannerController;
 import com.frandm.studytracker.ui.views.logs.LogsView;
 import com.frandm.studytracker.ui.views.StatsDashboard;
 import javafx.application.Application;
@@ -18,6 +18,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.PieChart;
@@ -29,11 +30,11 @@ import javafx.scene.shape.Arc;
 import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class PomodoroController {
 
@@ -42,7 +43,7 @@ public class PomodoroController {
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane;
     @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, confirmOverlay,
             confirmTagOverlay;
-    @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer, statsContainer,
+    @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
             plannerContainer, historyContainer, statsPlaceholder, streakVBox, streakImage,
             fuzzyResultsContainer, tagsListContainer, activeTaskContainer, pomoSettingsPane,
             countdownSettingsPane, settingsBox, confirmTagBox, confirmBox;
@@ -55,8 +56,8 @@ public class PomodoroController {
     @FXML public TextArea summaryDesc, editDescArea;
     @FXML public ComboBox<String> editTagCombo, editTaskCombo;
     @FXML public ColorPicker tagColorInput;
-    @FXML public Button startPauseBtn, skipBtn, finishBtn, menuBtn, statsBtn, plannerBtn, historyBtn;
-    @FXML public ToggleButton timerModeBtn, pomoModeBtn, countdownModeBtn;
+    @FXML public Button startPauseBtn, skipBtn, finishBtn;
+    @FXML public ToggleButton timerModeBtn, pomoModeBtn, countdownModeBtn, menuBtn, statsBtn, plannerBtn, historyBtn;
     @FXML public ToggleSwitch countBreakTime, autoPomoToggle, autoBreakToggle;
     @FXML public Slider workSlider, shortSlider, longSlider, intervalSlider, alarmVolumeSlider,
             widthSlider, countdownSlider, circleSizeSlider, notificationVolumeSlider, masterVolumeSlider,
@@ -73,9 +74,10 @@ public class PomodoroController {
     private final SetupManager setupManager = new SetupManager(this);
     private final UIManager uiManager = new UIManager();
     public VBox themeButtonsContainer;
+    public ScrollPane statsContainer;
 
     private StatsDashboard statsDashboard;
-    private PlannerView plannerView;
+    private PlannerController plannerController;
     private LogsView logsView;
 
     private double SIZE_FACTOR = 0.25;
@@ -85,6 +87,7 @@ public class PomodoroController {
 
     private final List<FontIcon> starNodes = new ArrayList<>();
     private final List<FontIcon> editStarNodes = new ArrayList<>();
+    private static final int UPCOMING_DEADLINES_LIMIT = 5;
 
 
     private Map<String, List<String>> tagsWithTasksMap = new HashMap<>();
@@ -110,6 +113,7 @@ public class PomodoroController {
         // ---------------- TEST ---------------------
         // ApiClient.generateRandomPomodoros();
         // ApiClient.generateRandomSchedule();
+        // ApiClient.generateRandomDeadlines();
         // -------------------------------------------
         ConfigManager.load(engine);
         refreshDatabaseData();
@@ -119,9 +123,9 @@ public class PomodoroController {
 
     private void setupViews() {
         //planner view
-        plannerView = new PlannerView(this);
-        plannerContainer.getChildren().setAll(plannerView);
-        VBox.setVgrow(plannerView, Priority.ALWAYS);
+        plannerController = new PlannerController(this);
+        plannerContainer.getChildren().setAll(plannerController.getView());
+        VBox.setVgrow(plannerContainer, Priority.ALWAYS);
 
         // logs view
         logsView = new LogsView(this);
@@ -372,6 +376,7 @@ public class PomodoroController {
             NotificationManager.show("Info", "Required 1 min to save session", NotificationManager.NotificationType.INFO);
             return;
         }
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         try {
             ApiClient.saveSession(
                     setupManager.getSelectedTag(),
@@ -380,12 +385,14 @@ public class PomodoroController {
                     summaryTitle.getText(),
                     summaryDesc.getText(),
                     engine.getRealMinutesElapsed(),
-                    startDate.toString(),
-                    LocalDateTime.now().toString(),
+                    startDate.format(fmt),
+                    LocalDateTime.now().format(fmt),
                     currentRating
             );
         } catch (Exception e) {
             System.err.println("Error saving session: " + e.getMessage());
+            NotificationManager.show("Error", "Session could not be saved", NotificationManager.NotificationType.ERROR);
+            return;
         }
 
         refreshDatabaseData();
@@ -409,18 +416,31 @@ public class PomodoroController {
     //region Navegación
     @FXML
     void handleNavClick(ActionEvent event) {
-        Button clickedBtn = (Button) event.getSource();
-        menuBtn.getStyleClass().remove("active");
-        plannerBtn.getStyleClass().remove("active");
-        statsBtn.getStyleClass().remove("active");
-        historyBtn.getStyleClass().remove("active");
+        ToggleButton clickedBtn = (ToggleButton) event.getSource();
+        Node targetContainer = null;
+
+        if (clickedBtn == menuBtn) {
+            targetContainer = mainContainer;
+        } else if (clickedBtn == plannerBtn) {
+            targetContainer = plannerContainer;
+        } else if (clickedBtn == statsBtn) {
+            targetContainer = statsContainer;
+        } else if (clickedBtn == historyBtn) {
+            targetContainer = historyContainer;
+        }
+
+        if (targetContainer != null && targetContainer == getActivePanel()) {
+            clickedBtn.setSelected(true);
+            return;
+        }
+        Stream.of(menuBtn, plannerBtn, statsBtn, historyBtn)
+                .forEach(btn -> btn.getStyleClass().remove("active"));
         clickedBtn.getStyleClass().add("active");
 
         if (clickedBtn == menuBtn) {
             uiManager.switchPanels(getActivePanel(), mainContainer);
         } else if (clickedBtn == plannerBtn) {
-            plannerView.refresh();
-            plannerView.scrollToCurrentTime();
+            plannerController.refresh();
             uiManager.switchPanels(getActivePanel(), plannerContainer);
         } else if (clickedBtn == statsBtn) {
             statsDashboard.refresh();
@@ -513,8 +533,8 @@ public class PomodoroController {
 
         switch (mode) {
             case POMODORO -> updatePomodoroUI(logical);
-            case TIMER -> updateTimerUI();
-            case COUNTDOWN -> updateCountdownUI();
+            case TIMER -> updateTimerUI(logical);
+            case COUNTDOWN -> updateCountdownUI(logical);
         }
     }
 
@@ -523,27 +543,41 @@ public class PomodoroController {
             case WORK, MENU -> {
                 uiManager.animateCircleColor(circleMain, "-color-work");
                 String text = (logical == PomodoroEngine.State.MENU) ? "Pomodoro" : "Pomodoro - #" + (engine.getSessionCounter() + 1);
-                applyStyle(text, "-color-work-secundary");
+                applyStyle(text, "-color-work-secundary", true);
             }
             case SHORT_BREAK -> {
                 uiManager.animateCircleColor(circleMain, "-color-break");
-                applyStyle("Short Break", "-color-break-secundary");
+                applyStyle("Short Break", "-color-break-secundary", true);
             }
             case LONG_BREAK -> {
                 uiManager.animateCircleColor(circleMain, "-color-long-break");
-                applyStyle("Long Break", "-color-long-break-secundary");
+                applyStyle("Long Break", "-color-long-break-secundary", true);
             }
         }
     }
 
-    private void updateTimerUI() {
+    private void updateTimerUI(PomodoroEngine.State logical) {
         uiManager.animateCircleColor(circleMain, "-color-work");
-        applyStyle("Timer", "-color-work-secundary");
+        switch (logical) {
+            case MENU -> {
+                applyStyle("Timer", "-color-work-secundary", true);
+            }
+            case WORK -> {
+                applyStyle("Timer", "-color-work-secundary", false);
+            }
+        }
     }
 
-    private void updateCountdownUI() {
+    private void updateCountdownUI(PomodoroEngine.State logical) {
         uiManager.animateCircleColor(circleMain, "-color-work");
-        applyStyle("Countdown", "-color-work-secundary");
+        switch (logical) {
+            case MENU -> {
+                applyStyle("Countdown", "-color-work-secundary", true);
+            }
+            case WORK -> {
+                applyStyle("Countdown", "-color-work-secundary", false);
+            }
+        }
     }
 
     private void updateProgressCircle() {
@@ -710,6 +744,52 @@ public class PomodoroController {
         return container;
     }
 
+    private VBox createUpcomingDeadlinesList() {
+        VBox container = new VBox(10);
+        container.setPadding(new Insets(15));
+        container.getStyleClass().add("menu-today-container");
+
+        Label title = new Label("UPCOMING DEADLINES");
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: -color-fg-muted;");
+
+        VBox list = new VBox(5);
+        List<Map<String, Object>> upcomingDeadlines;
+        try {
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            String now = LocalDateTime.now().format(fmt);
+            String futureLimit = LocalDate.now().plusYears(1).atTime(23, 59, 59).format(fmt);
+            upcomingDeadlines = ApiClient.getDeadlines(now, futureLimit);
+        } catch (Exception e) {
+            System.err.println("Error loading upcoming deadlines: " + e.getMessage());
+            upcomingDeadlines = new ArrayList<>();
+        }
+
+        upcomingDeadlines = upcomingDeadlines.stream()
+                .sorted(Comparator.comparing(d -> {
+                    Object raw = d.getOrDefault("dueDate", d.get("deadline"));
+                    if (raw == null) return LocalDateTime.MAX;
+                    String value = raw.toString();
+                    return value.contains("T")
+                            ? LocalDateTime.parse(value)
+                            : LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                }))
+                .limit(UPCOMING_DEADLINES_LIMIT)
+                .toList();
+
+        if (upcomingDeadlines.isEmpty()) {
+            Label empty = new Label("No upcoming deadlines");
+            empty.setStyle("-fx-font-style: italic; -fx-opacity: 0.6;");
+            list.getChildren().add(empty);
+        } else {
+            for (Map<String, Object> deadline : upcomingDeadlines) {
+                list.getChildren().add(createMiniDeadlineItem(deadline));
+            }
+        }
+
+        container.getChildren().addAll(title, list);
+        return container;
+    }
+
     private HBox createMiniSessionItem(Map<String, Object> session) {
         HBox item = new HBox(10);
         item.setAlignment(Pos.CENTER_LEFT);
@@ -761,10 +841,58 @@ public class PomodoroController {
         return item;
     }
 
+    private HBox createMiniDeadlineItem(Map<String, Object> deadline) {
+        HBox item = new HBox(10);
+        item.setAlignment(Pos.CENTER_LEFT);
+        item.setPadding(new Insets(8));
+        item.getStyleClass().add("menu-session-item");
+
+        Map<?, ?> task = (Map<?, ?>) deadline.get("task");
+        Map<?, ?> tag = task != null ? (Map<?, ?>) task.get("tag") : null;
+        String color = tag != null ? (String) tag.get("color") : "#ef4444";
+
+        Region colorIndicator = new Region();
+        colorIndicator.setPrefSize(4, 20);
+        colorIndicator.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 2;");
+
+        VBox info = new VBox(2);
+        Label lblTitle = new Label(String.valueOf(deadline.getOrDefault("title", "Deadline")));
+        lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+
+        Object rawDueDate = deadline.getOrDefault("dueDate", deadline.get("deadline"));
+        LocalDateTime dueDate = null;
+        if (rawDueDate != null) {
+            String value = rawDueDate.toString();
+            dueDate = value.contains("T")
+                    ? LocalDateTime.parse(value)
+                    : LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        }
+
+        boolean allDay = Boolean.TRUE.equals(deadline.get("allDay"));
+        String timeText = dueDate == null
+                ? ""
+                : allDay
+                ? dueDate.toLocalDate().format(DateTimeFormatter.ofPattern("dd MMM")) + " • All day"
+                : dueDate.format(DateTimeFormatter.ofPattern("dd MMM • HH:mm"));
+        String urgency = String.valueOf(deadline.getOrDefault("urgency", "Medium"));
+
+        Label lblTime = new Label(timeText + (timeText.isEmpty() ? "" : " • ") + urgency);
+        lblTime.setStyle("-fx-font-size: 13px; -fx-opacity: 0.7;");
+
+        FontIcon deadlineIcon = new FontIcon("mdi2a-alarm");
+        deadlineIcon.setIconColor(Color.web(color));
+        deadlineIcon.setIconSize(16);
+
+        info.getChildren().addAll(lblTitle, lblTime);
+        item.getChildren().addAll(colorIndicator, deadlineIcon, info);
+        return item;
+    }
+
     public void refreshSideMenu() {
         if (scheduleListContainer != null) {
             scheduleListContainer.getChildren().clear();
             scheduleListContainer.getChildren().add(createTodaySchedulesList());
+            scheduleListContainer.getChildren().add(createUpcomingDeadlinesList());
         }
     }
 
@@ -886,9 +1014,11 @@ public class PomodoroController {
         }
     }
 
-    private void applyStyle(String labelText, String colorVar) {
+    private void applyStyle(String labelText, String colorVar, boolean opacity) {
         stateLabel.setText(labelText);
         stateLabel.setStyle("-fx-text-fill: " + colorVar + ";");
+        stateLabel.setVisible(opacity);
+        stateLabel.setManaged(opacity);
         progressArc.setStyle("-fx-stroke: " + colorVar + ";");
         timerLabel.setStyle("-fx-text-fill: " + colorVar + ";");
     }
