@@ -11,6 +11,7 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -19,6 +20,7 @@ public class ApiClient {
 
     private static final String BASE_URL = System.getenv().getOrDefault("API_URL", "http://localhost:8080/api");
     private static final HttpClient http = HttpClient.newHttpClient();
+    public static final DateTimeFormatter API_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
 
@@ -49,7 +51,23 @@ public class ApiClient {
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();
-        return http.send(req, HttpResponse.BodyHandlers.ofString()).body();
+        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("PUT " + path + " failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
+        return response.body();
+    }
+
+    private static String patch(String path) throws Exception {
+        var req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + path))
+                .method("PATCH", HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("PATCH " + path + " failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
+        return response.body();
     }
 
     private static void delete(String path) throws Exception {
@@ -211,8 +229,8 @@ public class ApiClient {
                                 "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
                                 "title", "Test session", "description", "Generated session",
                                 "totalMinutes", duration,
-                                "startDate", start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                "endDate", end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                "startDate", formatApiTimestamp(start),
+                                "endDate", formatApiTimestamp(end),
                                 "rating", random.nextInt(6)
                         ));
 
@@ -264,8 +282,8 @@ public class ApiClient {
 
                         saveScheduledSession(tagName, taskName,
                                 titles[random.nextInt(titles.length)],
-                                start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                                formatApiTimestamp(start),
+                                formatApiTimestamp(end));
 
                         currentTime = end.plusMinutes(15 + random.nextInt(31));
                         if (currentTime.getHour() == 23) break;
@@ -284,7 +302,6 @@ public class ApiClient {
         LocalDate today = LocalDate.now();
         String[] titles = {"Final Exam", "Project Delivery", "Lab Report", "Essay Submission", "Quiz", "Thesis Draft"};
         String[] urgencies = {"High", "Medium", "Low"};
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         final int daysBefore = 25;
         final int daysAfter = 25;
 
@@ -299,6 +316,7 @@ public class ApiClient {
 
                 LocalDate dueDate = today.plusDays(offset);
                 boolean allDay = random.nextDouble() < 0.35;
+                boolean isCompleted = offset < -3 && random.nextDouble() < 0.45;
                 LocalDateTime dueDateTime = allDay
                         ? dueDate.atStartOfDay()
                         : dueDate.atTime(8 + random.nextInt(13), random.nextBoolean() ? 0 : 30);
@@ -310,8 +328,9 @@ public class ApiClient {
                         titles[random.nextInt(titles.length)] + " - " + task.get("name"),
                         "Generated automatic deadline for testing UI",
                         urgencies[random.nextInt(urgencies.length)],
-                        dueDateTime.format(fmt),
-                        allDay
+                        formatApiTimestamp(dueDateTime),
+                        allDay,
+                        isCompleted
                 );
             }
         } catch (Exception e) {
@@ -326,36 +345,80 @@ public class ApiClient {
         return mapper.readValue(get("/deadlines?start=" + Start + "&end=" + End), new TypeReference<>() {});
     }
 
+    private static Map<String, Object> createDeadline(String tagName, String tagColor, String taskName,
+                                                      String title, String description, String urgency,
+                                                      String dueDate, boolean allDay, Boolean isCompleted) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tagName", tagName);
+        body.put("tagColor", tagColor);
+        body.put("taskName", taskName);
+        body.put("title", title);
+        body.put("description", description);
+        body.put("urgency", urgency);
+        body.put("dueDate", dueDate);
+        body.put("allDay", allDay);
+        if (isCompleted != null) body.put("isCompleted", isCompleted);
+        return mapper.readValue(post("/deadlines", body), new TypeReference<>() {});
+    }
+
     public static void saveDeadline(String tagName, String tagColor, String taskName,
                                     String title, String description, String urgency,
-                                    String dueDate, boolean allDay) throws Exception {
-        post("/deadlines", Map.of(
-                "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
-                "title", title, "description", description, "urgency", urgency,
-                "dueDate", dueDate, "allDay", allDay
-        ));
+                                    String dueDate, boolean allDay, Boolean isCompleted) throws Exception {
+        createDeadline(tagName, tagColor, taskName, title, description, urgency, dueDate, allDay, isCompleted);
     }
 
     public static void updateDeadline(long id, String tagName, String tagColor, String taskName,
                                       String title, String description, String urgency,
-                                      String dueDate, boolean allDay) throws Exception {
-        var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/deadlines/" + id))
-                .header("Content-Type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(Map.of(
-                        "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
-                        "title", title, "description", description, "urgency", urgency,
-                        "dueDate", dueDate, "allDay", allDay
-                ))))
-                .build();
-        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() >= 400) {
-            throw new RuntimeException("Deadline update failed: HTTP " + response.statusCode() + " - " + response.body());
+                                      String dueDate, boolean allDay, Boolean isCompleted) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tagName", tagName);
+        body.put("tagColor", tagColor);
+        body.put("taskName", taskName);
+        body.put("title", title);
+        body.put("description", description);
+        body.put("urgency", urgency);
+        body.put("dueDate", dueDate);
+        body.put("allDay", allDay);
+        try {
+            put("/deadlines/" + id, body);
+        } catch (Exception error) {
+            if (!isMethodNotAllowed(error)) throw error;
+            deleteDeadline(id);
+            Map<String, Object> recreated = createDeadline(tagName, tagColor, taskName, title, description, urgency, dueDate, allDay, isCompleted);
+            syncCompletedState(recreated, isCompleted);
         }
+    }
+
+    public static void toggleDeadlineCompleted(long id) throws Exception {
+        patch("/deadlines/" + id + "/toggle");
     }
 
     public static void deleteDeadline(long id) throws Exception {
         delete("/deadlines/" + id);
+    }
+
+    public static String formatApiTimestamp(LocalDateTime value) {
+        return value.format(API_TIMESTAMP_FORMAT);
+    }
+
+    private static boolean isMethodNotAllowed(Exception error) {
+        return error.getMessage() != null && error.getMessage().contains("HTTP 405");
+    }
+
+    private static void syncCompletedState(Map<String, Object> deadline, Boolean desiredCompleted) throws Exception {
+        if (desiredCompleted == null) return;
+        boolean currentCompleted = extractCompleted(deadline);
+        if (currentCompleted == desiredCompleted) return;
+        Object id = deadline.get("id");
+        if (id instanceof Number number) {
+            toggleDeadlineCompleted(number.longValue());
+        }
+    }
+
+    private static boolean extractCompleted(Map<String, Object> deadline) {
+        Object raw = deadline.containsKey("isCompleted") ? deadline.get("isCompleted") : deadline.get("completed");
+        if (raw instanceof Boolean booleanValue) return booleanValue;
+        return raw != null && Boolean.parseBoolean(raw.toString());
     }
 
 }

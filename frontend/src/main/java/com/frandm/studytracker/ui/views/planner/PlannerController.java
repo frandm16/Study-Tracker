@@ -15,7 +15,7 @@ public class PlannerController {
     private final WeeklyTab weeklyTab;
     private final PlannerView view;
     private LocalDate selectedDate = LocalDate.now();
-    private final DateTimeFormatter apiFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final DateTimeFormatter apiFmt = ApiClient.API_TIMESTAMP_FORMAT;
 
     public PlannerController(PomodoroController controller) {
         this.dailyTab = new DailyTab(controller);
@@ -29,21 +29,17 @@ public class PlannerController {
     public void refresh() {
         new Thread(() -> {
             try {
-                String startStr = format(selectedDate, LocalTime.MIN);
-                String endStr = format(selectedDate, LocalTime.MAX);
+                LocalDate weekStart = selectedDate.with(java.time.DayOfWeek.MONDAY);
 
-                List<Map<String, Object>> sessions = ApiClient.getScheduledSessions(startStr, endStr);
-                List<Map<String, Object>> deadlines = ApiClient.getDeadlines(startStr, endStr);
-
-                process(sessions, "startTime", "endTime");
-                process(deadlines, "deadline", null);
+                List<Map<String, Object>> daySessions = loadScheduled(selectedDate, selectedDate);
+                List<Map<String, Object>> dayDeadlines = loadDeadlines(selectedDate, selectedDate);
+                List<Map<String, Object>> weekSessions = loadScheduled(weekStart, weekStart.plusDays(6));
+                List<Map<String, Object>> weekDeadlines = loadDeadlines(weekStart, weekStart.plusDays(6));
 
                 Platform.runLater(() -> {
                     dailyTab.updateHeaderDate(selectedDate);
-                    dailyTab.refreshData(sessions, deadlines);
-
-                    weeklyTab.setCurrentWeekStart(selectedDate);
-                    weeklyTab.refresh();
+                    dailyTab.refreshData(daySessions, dayDeadlines);
+                    weeklyTab.refreshData(weekStart, weekSessions, weekDeadlines);
 
                     view.updateTitle();
                 });
@@ -53,16 +49,35 @@ public class PlannerController {
         }).start();
     }
 
+    private List<Map<String, Object>> loadScheduled(LocalDate startDate, LocalDate endDate) throws Exception {
+        List<Map<String, Object>> sessions = ApiClient.getScheduledSessions(
+                format(startDate, LocalTime.MIN),
+                format(endDate, LocalTime.MAX)
+        );
+        process(sessions, "startTime", "endTime");
+        return sessions;
+    }
+
+    private List<Map<String, Object>> loadDeadlines(LocalDate startDate, LocalDate endDate) throws Exception {
+        List<Map<String, Object>> deadlines = ApiClient.getDeadlines(
+                format(startDate, LocalTime.MIN),
+                format(endDate, LocalTime.MAX)
+        );
+        process(deadlines, "deadline", null);
+        return deadlines;
+    }
+
     private void process(List<Map<String, Object>> items, String startKey, String endKey) {
         if (items == null) return;
         for (Map<String, Object> item : items) {
-            LocalDateTime start = parse(firstNonNull(item.get(startKey), item.get("dueDate"), item.get("deadline"), item.get("startTime")));
+            LocalDateTime start = resolveStartDate(item, startKey);
             if (start != null) {
                 item.put("start_time", start);
                 item.put("dueDate", start.format(apiFmt));
             }
+            item.put("isCompleted", asBoolean(resolveCompletedValue(item)));
             if (endKey != null) {
-                item.put("end_time", parse(firstNonNull(item.get(endKey), item.get("endTime"))));
+                item.put("end_time", resolveEndDate(item, endKey));
             }
 
             if (item.containsKey("task") && item.get("task") instanceof Map) {
@@ -80,13 +95,6 @@ public class PlannerController {
         }
     }
 
-    private Object firstNonNull(Object... values) {
-        for (Object value : values) {
-            if (value != null) return value;
-        }
-        return null;
-    }
-
     private LocalDateTime parse(Object val) {
         if (val == null) return null;
         String s = val.toString();
@@ -99,6 +107,31 @@ public class PlannerController {
 
     private String format(LocalDate date, LocalTime time) {
         return date.atTime(time).format(apiFmt);
+    }
+
+    private LocalDateTime resolveStartDate(Map<String, Object> item, String primaryKey) {
+        return firstParsed(item.get(primaryKey), item.get("dueDate"), item.get("deadline"), item.get("startTime"));
+    }
+
+    private LocalDateTime resolveEndDate(Map<String, Object> item, String primaryKey) {
+        return firstParsed(item.get(primaryKey), item.get("endTime"));
+    }
+
+    private Object resolveCompletedValue(Map<String, Object> item) {
+        return item.containsKey("isCompleted") ? item.get("isCompleted") : item.get("completed");
+    }
+
+    private LocalDateTime firstParsed(Object... candidates) {
+        for (Object candidate : candidates) {
+            LocalDateTime parsed = parse(candidate);
+            if (parsed != null) return parsed;
+        }
+        return null;
+    }
+
+    private boolean asBoolean(Object value) {
+        if (value instanceof Boolean booleanValue) return booleanValue;
+        return value != null && Boolean.parseBoolean(value.toString());
     }
 
     public void nextDay() { move(selectedDate.plusDays(1)); }

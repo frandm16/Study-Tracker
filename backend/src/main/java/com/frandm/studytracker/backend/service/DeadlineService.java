@@ -28,21 +28,48 @@ public class DeadlineService {
 
     public Deadline save(String tagName, String tagColor, String taskName,
                          String title, String description, String urgency,
-                         LocalDateTime dueDate, Boolean allDay) {
+                         LocalDateTime dueDate, Boolean allDay, Boolean isCompleted) {
         Deadline deadline = new Deadline();
-        return populateAndSave(deadline, tagName, tagColor, taskName, title, description, urgency, dueDate, allDay);
+        return populateAndSave(deadline, tagName, tagColor, taskName, title, description, urgency, dueDate, allDay, isCompleted);
     }
 
     public Deadline update(Long id, String tagName, String tagColor, String taskName,
                            String title, String description, String urgency,
-                           LocalDateTime dueDate, Boolean allDay) {
+                           LocalDateTime dueDate, Boolean allDay, Boolean isCompleted) {
         Deadline deadline = deadlineRepository.findById(id).orElseThrow();
-        return populateAndSave(deadline, tagName, tagColor, taskName, title, description, urgency, dueDate, allDay);
+        updateTaskAndTag(deadline, tagName, tagColor, taskName);
+        deadline.setTitle(title);
+        deadline.setDescription(description);
+        deadline.setUrgency(urgency);
+        deadline.setDueDate(dueDate);
+        deadline.setAllDay(allDay);
+        // Completion is controlled only through the dedicated toggle flow.
+        deadline.setIsCompleted(deadline.getIsCompleted());
+        return deadlineRepository.save(deadline);
     }
 
     private Deadline populateAndSave(Deadline deadline, String tagName, String tagColor, String taskName,
                                      String title, String description, String urgency,
-                                     LocalDateTime dueDate, Boolean allDay) {
+                                     LocalDateTime dueDate, Boolean allDay, Boolean isCompleted) {
+        boolean isNewDeadline = deadline.getId() == null;
+
+        updateTaskAndTag(deadline, tagName, tagColor, taskName);
+
+        deadline.setTitle(title);
+        deadline.setDescription(description);
+        deadline.setUrgency(urgency);
+        deadline.setDueDate(dueDate);
+        deadline.setAllDay(allDay);
+        if (isCompleted != null) {
+            deadline.setIsCompleted(isCompleted);
+        } else if (isNewDeadline) {
+            deadline.setIsCompleted(false);
+        }
+
+        return deadlineRepository.save(deadline);
+    }
+
+    private void updateTaskAndTag(Deadline deadline, String tagName, String tagColor, String taskName) {
 
         if (taskName != null && !taskName.isEmpty()) {
             Task task = taskService.getOrCreate(tagName, tagColor, taskName);
@@ -54,14 +81,6 @@ public class DeadlineService {
                     .findFirst().orElse(null);
             deadline.setTag(tag);
         }
-
-        deadline.setTitle(title);
-        deadline.setDescription(description);
-        deadline.setUrgency(urgency);
-        deadline.setDueDate(dueDate);
-        deadline.setAllDay(allDay);
-
-        return deadlineRepository.save(deadline);
     }
 
     public List<Deadline> getAll() {

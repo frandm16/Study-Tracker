@@ -376,7 +376,6 @@ public class PomodoroController {
             NotificationManager.show("Info", "Required 1 min to save session", NotificationManager.NotificationType.INFO);
             return;
         }
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         try {
             ApiClient.saveSession(
                     setupManager.getSelectedTag(),
@@ -385,8 +384,8 @@ public class PomodoroController {
                     summaryTitle.getText(),
                     summaryDesc.getText(),
                     engine.getRealMinutesElapsed(),
-                    startDate.format(fmt),
-                    LocalDateTime.now().format(fmt),
+                    ApiClient.formatApiTimestamp(startDate),
+                    ApiClient.formatApiTimestamp(LocalDateTime.now()),
                     currentRating
             );
         } catch (Exception e) {
@@ -717,9 +716,8 @@ public class PomodoroController {
         VBox list = new VBox(5);
         List<Map<String, Object>> todaySessions;
         try {
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String today = LocalDate.now().atStartOfDay().format(fmt);
-            String endOfDay = LocalDate.now().atTime(23, 59, 59).format(fmt);
+            String today = ApiClient.formatApiTimestamp(LocalDate.now().atStartOfDay());
+            String endOfDay = ApiClient.formatApiTimestamp(LocalDate.now().atTime(23, 59, 59));
             todaySessions = ApiClient.getScheduledSessions(today, endOfDay);
         } catch (Exception e) {
             System.err.println("Error loading today sessions: " + e.getMessage());
@@ -755,9 +753,8 @@ public class PomodoroController {
         VBox list = new VBox(5);
         List<Map<String, Object>> upcomingDeadlines;
         try {
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String now = LocalDateTime.now().format(fmt);
-            String futureLimit = LocalDate.now().plusYears(1).atTime(23, 59, 59).format(fmt);
+            String now = ApiClient.formatApiTimestamp(LocalDateTime.now());
+            String futureLimit = ApiClient.formatApiTimestamp(LocalDate.now().plusYears(1).atTime(23, 59, 59));
             upcomingDeadlines = ApiClient.getDeadlines(now, futureLimit);
         } catch (Exception e) {
             System.err.println("Error loading upcoming deadlines: " + e.getMessage());
@@ -771,7 +768,7 @@ public class PomodoroController {
                     String value = raw.toString();
                     return value.contains("T")
                             ? LocalDateTime.parse(value)
-                            : LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                            : LocalDateTime.parse(value, ApiClient.API_TIMESTAMP_FORMAT);
                 }))
                 .limit(UPCOMING_DEADLINES_LIMIT)
                 .toList();
@@ -865,7 +862,7 @@ public class PomodoroController {
             String value = rawDueDate.toString();
             dueDate = value.contains("T")
                     ? LocalDateTime.parse(value)
-                    : LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    : LocalDateTime.parse(value, ApiClient.API_TIMESTAMP_FORMAT);
         }
 
         boolean allDay = Boolean.TRUE.equals(deadline.get("allDay"));

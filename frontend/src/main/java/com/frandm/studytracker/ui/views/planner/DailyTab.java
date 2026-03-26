@@ -3,6 +3,7 @@ package com.frandm.studytracker.ui.views.planner;
 import atlantafx.base.theme.Styles;
 import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.controllers.PomodoroController;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -49,7 +50,7 @@ public class DailyTab extends VBox {
     private Popup activePopup;
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final DateTimeFormatter API_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter API_FMT = ApiClient.API_TIMESTAMP_FORMAT;
 
     public DailyTab(PomodoroController pomodoroController) {
         this.pomodoroController = pomodoroController;
@@ -99,14 +100,14 @@ public class DailyTab extends VBox {
                 .sorted(Comparator
                         .comparing((Map<String, Object> item) -> !Boolean.TRUE.equals(item.get("allDay")))
                         .thenComparing(item -> {
-                            LocalDateTime due = parse(firstNonNull(item.get("start_time"), item.get("dueDate"), item.get("deadline")));
+                            LocalDateTime due = extractDeadlineDate(item);
                             return due != null ? due : LocalDateTime.MAX;
                         }))
                 .collect(Collectors.toList());
 
         List<Map<String, Object>> sortedScheduled = scheduled == null ? List.of() : scheduled.stream()
                 .sorted(Comparator.comparing(item -> {
-                    LocalDateTime start = parse(firstNonNull(item.get("start_time"), item.get("startTime"), item.get("full_start")));
+                    LocalDateTime start = extractScheduledStart(item);
                     return start != null ? start : LocalDateTime.MAX;
                 }))
                 .collect(Collectors.toList());
@@ -141,8 +142,9 @@ public class DailyTab extends VBox {
         HBox row = baseRow();
         row.getStyleClass().add("deadline-row");
 
-        LocalDateTime due = parse(firstNonNull(data.get("start_time"), data.get("dueDate"), data.get("deadline")));
+        LocalDateTime due = extractDeadlineDate(data);
         boolean allDay = Boolean.TRUE.equals(data.get("allDay"));
+        boolean isCompleted = isDeadlineCompleted(data);
         long diff = due != null ? ChronoUnit.DAYS.between(LocalDate.now(), due.toLocalDate()) : 0;
         String urgency = String.valueOf(data.getOrDefault("urgency", "Medium"));
 
@@ -172,14 +174,49 @@ public class DailyTab extends VBox {
                 badge(String.valueOf(data.getOrDefault("tagName", data.getOrDefault("tag_name", ""))), null, "badge-tag")
         );
 
+        Button completedButton = new Button();
+        completedButton.getStyleClass().add("calendar-button-icon");
+        FontIcon completedIcon = new FontIcon();
+        completedIcon.setIconSize(18);
+        completedButton.setGraphic(completedIcon);
+        final boolean[] completedState = {isCompleted};
+        applyDeadlineCompletedState(row, title, completedIcon, completedState[0]);
+        completedButton.setOnAction(e -> {
+            completedButton.setDisable(true);
+            e.consume();
+            boolean previousState = completedState[0];
+            boolean nextState = !previousState;
+            completedState[0] = nextState;
+            data.put("isCompleted", nextState);
+            applyDeadlineCompletedState(row, title, completedIcon, nextState);
+            new Thread(() -> {
+                try {
+                    ApiClient.toggleDeadlineCompleted(((Number) data.get("id")).longValue());
+                    Platform.runLater(refreshAction);
+                } catch (Exception ignored) {
+                    completedState[0] = previousState;
+                    data.put("isCompleted", previousState);
+                    Platform.runLater(() -> applyDeadlineCompletedState(row, title, completedIcon, previousState));
+                } finally {
+                    Platform.runLater(() -> completedButton.setDisable(false));
+                }
+            }, "deadline-toggle").start();
+        });
+
         FontIcon deadlineIcon = new FontIcon("mdi2a-alarm");
-        row.getChildren().addAll(deadlineIcon, info, spacer, badges);
+        row.getChildren().addAll(completedButton, deadlineIcon, info, spacer, badges);
         row.setOnMouseClicked(e -> {
             showDeadlinePopup(data, e.getScreenX(), e.getScreenY());
             e.consume();
         });
         row.setCursor(javafx.scene.Cursor.HAND);
         return row;
+    }
+
+    private void applyDeadlineCompletedState(HBox row, Label title, FontIcon completedIcon, boolean isCompleted) {
+        completedIcon.setIconLiteral(isCompleted ? "mdi2c-check-circle" : "mdi2c-checkbox-blank-circle-outline");
+        title.setStyle(isCompleted ? "-fx-strikethrough: true; -fx-opacity: 0.65;" : "");
+        row.setOpacity(isCompleted ? 0.72 : 1.0);
     }
 
     private HBox createEventRow(Map<String, Object> data) {
@@ -243,8 +280,8 @@ public class DailyTab extends VBox {
         TextField titleField = new TextField(String.valueOf(data.getOrDefault("title", "")));
         titleField.getStyleClass().add("input-calendar");
 
-        LocalDateTime start = parse(firstNonNull(data.get("full_start"), data.get("start_time"), data.get("startTime")));
-        LocalDateTime end = parse(firstNonNull(data.get("full_end"), data.get("end_time"), data.get("endTime")));
+        LocalDateTime start = extractScheduledPopupStart(data);
+        LocalDateTime end = extractScheduledPopupEnd(data);
         if (start == null) start = currentDate.atTime(9, 0);
         if (end == null) end = start.plusHours(1);
 
@@ -347,7 +384,7 @@ public class DailyTab extends VBox {
         descriptionArea.setWrapText(true);
         descriptionArea.setPrefRowCount(3);
 
-        LocalDateTime due = parse(firstNonNull(data.get("start_time"), data.get("dueDate"), data.get("deadline")));
+        LocalDateTime due = extractDeadlineDate(data);
         if (due == null) due = currentDate.atTime(0, 0);
 
         DatePicker dueDate = new DatePicker(due.toLocalDate());
@@ -401,7 +438,8 @@ public class DailyTab extends VBox {
                             descriptionArea.getText().trim(),
                             urgency.getValue(),
                             newDue.format(API_FMT),
-                            allDay.isSelected()
+                            allDay.isSelected(),
+                            isDeadlineCompleted(data)
                     );
                 } else {
                     ApiClient.saveDeadline(
@@ -412,31 +450,15 @@ public class DailyTab extends VBox {
                             descriptionArea.getText().trim(),
                             urgency.getValue(),
                             newDue.format(API_FMT),
-                            allDay.isSelected()
+                            allDay.isSelected(),
+                            false
                     );
                 }
-            } catch (Exception updateError) {
-                if (!isEdit) {
-                    popup.hide();
-                    refreshAction.run();
-                    return;
-                }
-                try {
-                    ApiClient.deleteDeadline(((Number) data.get("id")).longValue());
-                    ApiClient.saveDeadline(
-                            tags.getValue(),
-                            tagData.tagColors().getOrDefault(tags.getValue(), ""),
-                            tasks.getValue(),
-                            titleField.getText().trim(),
-                            descriptionArea.getText().trim(),
-                            urgency.getValue(),
-                            newDue.format(API_FMT),
-                            allDay.isSelected()
-                    );
-                } catch (Exception ignored) {}
+                popup.hide();
+                refreshAction.run();
+            } catch (Exception error) {
+                error.printStackTrace();
             }
-            popup.hide();
-            refreshAction.run();
         });
 
         root.getChildren().addAll(
@@ -568,6 +590,36 @@ public class DailyTab extends VBox {
         return Integer.parseInt(value);
     }
 
+    private LocalDateTime extractDeadlineDate(Map<String, Object> data) {
+        return parsePreferredDate(data, "start_time", "dueDate", "deadline");
+    }
+
+    private LocalDateTime extractScheduledStart(Map<String, Object> data) {
+        return parsePreferredDate(data, "start_time", "startTime", "full_start");
+    }
+
+    private LocalDateTime extractScheduledPopupStart(Map<String, Object> data) {
+        return parsePreferredDate(data, "full_start", "start_time", "startTime");
+    }
+
+    private LocalDateTime extractScheduledPopupEnd(Map<String, Object> data) {
+        return parsePreferredDate(data, "full_end", "end_time", "endTime");
+    }
+
+    private LocalDateTime parsePreferredDate(Map<String, Object> data, String... keys) {
+        for (String key : keys) {
+            LocalDateTime parsed = parse(data.get(key));
+            if (parsed != null) return parsed;
+        }
+        return null;
+    }
+
+    private boolean isDeadlineCompleted(Map<String, Object> data) {
+        Object raw = data.containsKey("isCompleted") ? data.get("isCompleted") : data.get("completed");
+        if (raw instanceof Boolean completed) return completed;
+        return raw != null && Boolean.parseBoolean(raw.toString());
+    }
+
     private String buildDeadlineStatus(long diff, boolean allDay) {
         String timing = diff < 0 ? "Overdue " + Math.abs(diff) + " days" : (diff == 0 ? "Due Today" : "Due in " + diff + " days");
         return allDay ? timing + " • All day" : timing;
@@ -589,13 +641,6 @@ public class DailyTab extends VBox {
         if (start == null) return formatTime(end);
         if (end == null) return formatTime(start);
         return formatTime(start) + " - " + formatTime(end);
-    }
-
-    private Object firstNonNull(Object... values) {
-        for (Object value : values) {
-            if (value != null) return value;
-        }
-        return null;
     }
 
     private LocalDateTime parse(Object val) {

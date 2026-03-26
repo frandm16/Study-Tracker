@@ -1,5 +1,6 @@
 package com.frandm.studytracker.models;
 
+import com.frandm.studytracker.client.ApiClient;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -16,7 +17,7 @@ public class Session {
     private int rating;
     private boolean isFavorite;
 
-    private static final DateTimeFormatter DB_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DB_FORMATTER = ApiClient.API_TIMESTAMP_FORMAT;
 
     public Session(int id, String tag, String tagColor, String task, String title,
                    String description, int totalMinutes, String startDate, String endDate) {

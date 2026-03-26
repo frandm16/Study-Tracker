@@ -50,7 +50,8 @@ public class DeadlineController {
                 (String) body.get("description"),
                 (String) body.get("urgency"),
                 LocalDateTime.parse((String) body.get("dueDate"), fmt),
-                (Boolean) body.get("allDay")
+                (Boolean) body.get("allDay"),
+                (Boolean) body.get("isCompleted")
         );
     }
 
@@ -65,7 +66,8 @@ public class DeadlineController {
                 (String) body.get("description"),
                 (String) body.get("urgency"),
                 LocalDateTime.parse((String) body.get("dueDate"), fmt),
-                (Boolean) body.get("allDay")
+                (Boolean) body.get("allDay"),
+                null
         );
     }
 
