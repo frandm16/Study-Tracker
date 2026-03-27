@@ -9,6 +9,7 @@ import com.frandm.studytracker.core.*;
 import com.frandm.studytracker.models.Session;
 import com.frandm.studytracker.ui.util.Animations;
 import com.frandm.studytracker.ui.util.UIManager;
+import com.frandm.studytracker.ui.views.FloatingDockView;
 import com.frandm.studytracker.ui.views.planner.PlannerController;
 import com.frandm.studytracker.ui.views.logs.LogsView;
 import com.frandm.studytracker.ui.views.StatsDashboard;
@@ -18,7 +19,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.PieChart;
@@ -34,7 +34,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Stream;
 
 public class PomodoroController {
 
@@ -46,8 +45,8 @@ public class PomodoroController {
     @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
             plannerContainer, historyContainer, statsPlaceholder, streakVBox, streakImage,
             fuzzyResultsContainer, tagsListContainer, activeTaskContainer, pomoSettingsPane,
-            countdownSettingsPane, settingsBox, confirmTagBox, confirmBox;
-    @FXML public HBox starsContainer, editStarsContainer, buttonsHbox;
+            countdownSettingsPane, settingsBox, confirmTagBox, confirmBox, themeButtonsContainer;
+    @FXML public HBox starsContainer, editStarsContainer, buttonsHbox, floatingDock;
     @FXML public Label timerLabel, stateLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
             alarmVolumeValLabel, widthSliderValLabel, countdownValLabel, circleSizeValLabel,
             streakLabel, timeThisWeekLabel, timeLastMonthLabel, tasksLabel, bestDayLabel, selectedNameLabel,
@@ -57,7 +56,7 @@ public class PomodoroController {
     @FXML public ComboBox<String> editTagCombo, editTaskCombo;
     @FXML public ColorPicker tagColorInput;
     @FXML public Button startPauseBtn, skipBtn, finishBtn;
-    @FXML public ToggleButton timerModeBtn, pomoModeBtn, countdownModeBtn, menuBtn, statsBtn, plannerBtn, historyBtn;
+    @FXML public ToggleButton timerModeBtn, pomoModeBtn, countdownModeBtn;
     @FXML public ToggleSwitch countBreakTime, autoPomoToggle, autoBreakToggle;
     @FXML public Slider workSlider, shortSlider, longSlider, intervalSlider, alarmVolumeSlider,
             widthSlider, countdownSlider, circleSizeSlider, notificationVolumeSlider, masterVolumeSlider,
@@ -68,21 +67,21 @@ public class PomodoroController {
     @FXML public CategoryAxis weeksXAxis;
     @FXML public PieChart tagPieChart;
     @FXML public ColumnConstraints colRightStats, colCenterStats, colLeftStats;
+    @FXML public ScrollPane statsContainer;
     //endregion
 
     private final PomodoroEngine engine = new PomodoroEngine();
     private final SetupManager setupManager = new SetupManager(this);
     private final UIManager uiManager = new UIManager();
-    public VBox themeButtonsContainer;
-    public ScrollPane statsContainer;
+
 
     private StatsDashboard statsDashboard;
     private PlannerController plannerController;
     private LogsView logsView;
+    private FloatingDockView floatingDockView;
 
     private double SIZE_FACTOR = 0.25;
     private int currentRating = 0;
-    private boolean isDarkMode = true;
     private LocalDateTime startDate;
 
     private final List<FontIcon> starNodes = new ArrayList<>();
@@ -101,6 +100,7 @@ public class PomodoroController {
     public void initialize() {
         initializeCoreSystems();
         setupViews();
+        setupDynamicDock();
         setupInitialUIState();
         setupSettingsPanel();
         setupModeSystem();
@@ -155,6 +155,61 @@ public class PomodoroController {
         stackpaneCircle.heightProperty().addListener((_, _, _) -> resizeCircle());
         SIZE_FACTOR = engine.getUiSize() * 0.005;
         resizeCircle();
+    }
+
+    private void setupDynamicDock() {
+        floatingDockView = new FloatingDockView(
+                floatingDock,
+                () -> engine,
+                this::handleDockNavigation,
+                this::toggleSettings
+        );
+    }
+
+    private void refreshDynamicDock() {
+        if (floatingDockView != null) {
+            floatingDockView.refreshState();
+        }
+    }
+
+    private void handleDockNavigation(FloatingDockView.Section section, int direction) {
+        Region activePanel = getActivePanel();
+
+        switch (section) {
+            case TIMER -> {
+                if (activePanel == mainContainer) {
+                    floatingDockView.setSelectedSection(FloatingDockView.Section.TIMER, direction);
+                    return;
+                }
+                refreshSideMenu();
+                uiManager.switchPanels(activePanel, mainContainer, direction);
+            }
+            case PLANNER -> {
+                if (activePanel == plannerContainer) {
+                    floatingDockView.setSelectedSection(FloatingDockView.Section.PLANNER, direction);
+                    return;
+                }
+                //plannerController.refresh();
+                uiManager.switchPanels(activePanel, plannerContainer, direction);
+            }
+            case STATS -> {
+                if (activePanel == statsContainer) {
+                    floatingDockView.setSelectedSection(FloatingDockView.Section.STATS, direction);
+                    return;
+                }
+                statsDashboard.refresh();
+                uiManager.switchPanels(activePanel, statsContainer, direction);
+            }
+            case HISTORY -> {
+                if (activePanel == historyContainer) {
+                    floatingDockView.setSelectedSection(FloatingDockView.Section.HISTORY, direction);
+                    return;
+                }
+                logsView.resetAndReload();
+                uiManager.switchPanels(activePanel, historyContainer, direction);
+            }
+        }
+        refreshDynamicDock();
     }
 
     private void setupSettingsPanel() {
@@ -417,44 +472,6 @@ public class PomodoroController {
 
     //region Navegación
     @FXML
-    void handleNavClick(ActionEvent event) {
-        ToggleButton clickedBtn = (ToggleButton) event.getSource();
-        Node targetContainer = null;
-
-        if (clickedBtn == menuBtn) {
-            targetContainer = mainContainer;
-        } else if (clickedBtn == plannerBtn) {
-            targetContainer = plannerContainer;
-        } else if (clickedBtn == statsBtn) {
-            targetContainer = statsContainer;
-        } else if (clickedBtn == historyBtn) {
-            targetContainer = historyContainer;
-        }
-
-        if (targetContainer != null && targetContainer == getActivePanel()) {
-            clickedBtn.setSelected(true);
-            return;
-        }
-        Stream.of(menuBtn, plannerBtn, statsBtn, historyBtn)
-                .forEach(btn -> btn.getStyleClass().remove("active"));
-        clickedBtn.getStyleClass().add("active");
-
-        if (clickedBtn == menuBtn) {
-            refreshSideMenu();
-            uiManager.switchPanels(getActivePanel(), mainContainer);
-        } else if (clickedBtn == plannerBtn) {
-            plannerController.refresh();
-            uiManager.switchPanels(getActivePanel(), plannerContainer);
-        } else if (clickedBtn == statsBtn) {
-            statsDashboard.refresh();
-            uiManager.switchPanels(getActivePanel(), statsContainer);
-        } else if (clickedBtn == historyBtn) {
-            logsView.resetAndReload();
-            uiManager.switchPanels(getActivePanel(), historyContainer);
-        }
-    }
-
-    @FXML
     private void handleResetTimeSettings() {
         workSlider.setValue(25);
         shortSlider.setValue(5);
@@ -467,12 +484,6 @@ public class PomodoroController {
 
         updateEngineSettings();
         ConfigManager.save(engine);
-    }
-
-    @FXML
-    private void toggleTheme() {
-        isDarkMode = !isDarkMode;
-        applyTheme();
     }
 
     @FXML
@@ -539,6 +550,8 @@ public class PomodoroController {
             case TIMER -> updateTimerUI(logical);
             case COUNTDOWN -> updateCountdownUI(logical);
         }
+
+        refreshDynamicDock();
     }
 
     private void updatePomodoroUI(PomodoroEngine.State logical) {
@@ -809,6 +822,8 @@ public class PomodoroController {
 
         Region colorIndicator = new Region();
         colorIndicator.setPrefSize(4, 20);
+        colorIndicator.setMinWidth(4);
+        colorIndicator.setMaxWidth(4);
         colorIndicator.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 2;");
 
         VBox info = new VBox(2);
@@ -855,6 +870,8 @@ public class PomodoroController {
 
         Region colorIndicator = new Region();
         colorIndicator.setPrefSize(4, 20);
+        colorIndicator.setMinWidth(4);
+        colorIndicator.setMaxWidth(4);
         colorIndicator.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 2;");
 
         VBox info = new VBox(2);
@@ -889,6 +906,7 @@ public class PomodoroController {
             scheduleListContainer.getChildren().add(createTodaySchedulesList());
             scheduleListContainer.getChildren().add(createUpcomingDeadlinesList());
         }
+        refreshDynamicDock();
     }
 
     private LocalDateTime extractSessionStartTime(Map<String, Object> session) {
@@ -963,7 +981,9 @@ public class PomodoroController {
 
     public void switchToTimer() {
         if (getActivePanel() == mainContainer) return;
-        menuBtn.fire();
+        if (floatingDockView != null) {
+            floatingDockView.triggerSection(FloatingDockView.Section.TIMER);
+        }
     }
 
     public void playScheduleSession(String tag, String task) {
@@ -1092,11 +1112,6 @@ public class PomodoroController {
         pomoModeBtn.setDisable(false);
         timerModeBtn.setDisable(false);
         countdownModeBtn.setDisable(false);
-    }
-
-    @FXML
-    private void handleMusicToggle() {
-        SoundManager.toggleMusic(SoundManager.SoundType.BACKGROUND_MUSIC);
     }
 
     public String getCurrentTheme() { return engine.getCurrentTheme();}

@@ -20,10 +20,6 @@
            xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.frandm.studytracker.controllers.PomodoroController">
 
-    <fx:define>
-        <ToggleGroup fx:id="dockGroup" />
-    </fx:define>
-
     <VBox >
         <StackPane VBox.vgrow="ALWAYS" maxWidth="Infinity" >
             <GridPane StackPane.alignment="TOP_CENTER"  maxHeight="-Infinity" maxWidth="Infinity">
@@ -280,28 +276,6 @@
           maxWidth="-Infinity" maxHeight="-Infinity"
           styleClass="floating-dock">
         <StackPane.margin><Insets bottom="30" /></StackPane.margin>
-
-        <ToggleButton fx:id="menuBtn" onAction="#handleNavClick" styleClass="dock-button" toggleGroup="$dockGroup" selected="true">
-            <graphic><FontIcon iconLiteral="mdi2t-timer-outline" styleClass="dock-icon" /></graphic>
-        </ToggleButton>
-
-        <ToggleButton fx:id="plannerBtn" onAction="#handleNavClick" styleClass="dock-button" toggleGroup="$dockGroup">
-            <graphic><FontIcon iconLiteral="mdi2c-calendar-check" styleClass="dock-icon" /></graphic>
-        </ToggleButton>
-
-        <ToggleButton fx:id="statsBtn" onAction="#handleNavClick" styleClass="dock-button" toggleGroup="$dockGroup">
-            <graphic><FontIcon iconLiteral="mdi2c-chart-bar" styleClass="dock-icon" /></graphic>
-        </ToggleButton>
-
-        <ToggleButton fx:id="historyBtn" onAction="#handleNavClick" styleClass="dock-button" toggleGroup="$dockGroup">
-            <graphic><FontIcon iconLiteral="mdi2h-history" styleClass="dock-icon" /></graphic>
-        </ToggleButton>
-
-        <Separator orientation="VERTICAL" prefHeight="20" />
-
-        <Button onAction="#toggleSettings" styleClass="dock-button">
-            <graphic><FontIcon iconLiteral="mdi2c-cog-outline" styleClass="dock-icon" /></graphic>
-        </Button>
     </HBox>
 
 

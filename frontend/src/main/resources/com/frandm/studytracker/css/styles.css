@@ -1582,29 +1582,51 @@
     -fx-icon-color: -color-accent;
 }
 
-/* --- floating deck --- */
+/* --- floating dock --- */
 .floating-dock {
-    -fx-background-color: derive(-color-bg-subtle, 10%);
-    -fx-background-radius: 24;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -color-bg-subtle, -color-bg-default);
+    -fx-background-radius: 26;
     -fx-border-color: -color-border-subtle-light;
-    -fx-border-radius: 24;
-    -fx-padding: 10 18 10 18;
-    -fx-effect: dropshadow(three-pass-box, -shadow-default, 20, 0, 0, 10);
+    -fx-border-radius: 26;
+    -fx-padding: 10 16 10 16;
+    -fx-spacing: 10;
+    -fx-effect: dropshadow(three-pass-box, -shadow-default, 26, 0, 0, 12);
 }
 
 .dock-button {
     -fx-background-color: transparent;
-    -fx-background-radius: 14;
+    -fx-background-radius: 18;
+    -fx-padding: 12 14 12 14;
     -fx-cursor: hand;
 }
 
 .dock-icon {
     -fx-icon-color: -icon-subtle;
-    -fx-icon-size: 28;
+    -fx-icon-size: 24;
+}
+
+.dock-copy {
+    -fx-spacing: 1;
+}
+
+.dock-title {
+    -fx-text-fill: -text-main;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.dock-subtitle {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 11px;
+}
+
+.dock-button-utility {
+    -fx-padding: 12;
 }
 
 .dock-button:hover {
-    -fx-background-color: -color-hover;
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-translate-y: -1;
 }
 
 .dock-button:hover .dock-icon {
@@ -1612,8 +1634,11 @@
 }
 
 .dock-button:selected {
-    -fx-background-color: -color-accent-light;
-    -fx-effect: dropshadow(two-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 0, 0);
+    -fx-background-color: linear-gradient(from 0% 0% to 75% 75%, -color-accent-light, -color-bg-default);
+    -fx-border-color: -color-accent-light;
+    -fx-border-radius: 18;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(two-pass-box, -color-accent-light, 5, 0, 0, 0);
 }
 
 .dock-button:selected .dock-icon {
@@ -1621,7 +1646,7 @@
 }
 
 .floating-dock .separator {
-    -fx-opacity: 0.5;
+    -fx-opacity: 0.4;
     -fx-padding: 0 5 0 5;
 }
 
@@ -1630,11 +1655,6 @@
     -fx-border-width: 0 1 0 0;
 }
 
-.day-column-wrapper {
-    -fx-background-color: -color-bg-calendar;
-    -fx-background-radius: 6;
+#scheduleListContainer {
+    -fx-padding: 50 30 0 0;
 }
-
-
-
-

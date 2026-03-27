@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PlannerController {
     private final DailyTab dailyTab;
@@ -15,6 +17,7 @@ public class PlannerController {
     private final PlannerView view;
     private final PomodoroController pomodoroController;
     private LocalDate selectedDate = LocalDate.now();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public PlannerController(PomodoroController controller) {
         this.pomodoroController = controller;
@@ -27,14 +30,15 @@ public class PlannerController {
     }
 
     public void refresh() {
-        new Thread(() -> {
-            try {
-                LocalDate weekStart = selectedDate.with(java.time.DayOfWeek.MONDAY);
+        LocalDate weekStart = selectedDate.with(java.time.DayOfWeek.MONDAY);
+        LocalDate weekEnd = weekStart.plusDays(6);
 
+        executor.submit(() -> {
+            try {
                 List<Map<String, Object>> daySessions = loadScheduled(selectedDate, selectedDate);
                 List<Map<String, Object>> dayDeadlines = loadDeadlines(selectedDate, selectedDate);
-                List<Map<String, Object>> weekSessions = loadScheduled(weekStart, weekStart.plusDays(6));
-                List<Map<String, Object>> weekDeadlines = loadDeadlines(weekStart, weekStart.plusDays(6));
+                List<Map<String, Object>> weekSessions = loadScheduled(weekStart, weekEnd);
+                List<Map<String, Object>> weekDeadlines = loadDeadlines(weekStart, weekEnd);
 
                 Platform.runLater(() -> {
                     dailyTab.updateHeaderDate(selectedDate);
@@ -44,10 +48,11 @@ public class PlannerController {
                     view.updateTitle();
                     pomodoroController.refreshSideMenu();
                 });
+
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.println("Error refreshing Planner: " + e.getMessage());
             }
-        }).start();
+        });
     }
 
     private List<Map<String, Object>> loadScheduled(LocalDate startDate, LocalDate endDate) throws Exception {

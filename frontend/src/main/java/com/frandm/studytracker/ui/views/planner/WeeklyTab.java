@@ -26,8 +26,8 @@ public class WeeklyTab extends VBox {
     private Popup activePopup = null;
     private long lastPopupCloseTime = 0;
     private final double ROW_HEIGHT = 60.0;
-    private static final double ALL_DAY_MIN_HEIGHT = 30.0;
-    private static final double DEADLINE_HEIGHT = 28.0;
+    private static final double ALL_DAY_MIN_HEIGHT = 45.0;
+    private static final double DEADLINE_HEIGHT = 45.0;
     private final Pane[] dayColumns = new Pane[7];
     private final Pane[] deadlineLayers = new Pane[7];
     private final VBox[] allDayDeadlineContainers = new VBox[7];
@@ -373,7 +373,9 @@ public class WeeklyTab extends VBox {
         meta.setOpacity(isCompleted ? 0.7 : 1.0);
         content.getChildren().addAll(titleRow, meta);
 
+
         pill.getChildren().addAll(icon, colorBar, content);
+        pill.setMinWidth(0);
         Tooltip.install(pill, new Tooltip(buildDeadlineTooltip(deadline, allDay, date)));
         if (isCompleted) pill.setOpacity(0.5);
         pill.setOnMouseClicked(e -> {
@@ -921,30 +923,6 @@ public class WeeklyTab extends VBox {
 
     private boolean isDeadlineCompleted(Map<String, Object> deadline) {
         return ApiClient.extractCompletedFlag(deadline);
-    }
-
-    private void updateSessionTime(Map<String, Object> s, int newHour, int newMinute) {
-        LocalDateTime oldStart = (LocalDateTime) s.get("full_start");
-        LocalDateTime oldEnd = (LocalDateTime) s.get("full_end");
-
-        long durationMinutes = java.time.Duration.between(oldStart, oldEnd).toMinutes();
-
-        LocalDateTime newStart = oldStart.withHour(newHour).withMinute(newMinute).withSecond(0);
-        LocalDateTime newEnd = newStart.plusMinutes(durationMinutes);
-
-        try {
-            ApiClient.updateScheduledSession(
-                    (int) s.get("id"),
-                    (String) s.get("tag_name"),
-                    (String) s.get("task_name"),
-                    (String) s.getOrDefault("title", ""),
-                    ApiClient.formatApiTimestamp(newStart),
-                    ApiClient.formatApiTimestamp(newEnd)
-            );
-            refreshPlannerAndMenu();
-        } catch (Exception e) {
-            refreshPlannerAndMenu();
-        }
     }
 
     private void refreshPlannerAndMenu() {

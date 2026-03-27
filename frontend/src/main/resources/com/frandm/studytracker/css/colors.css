@@ -38,7 +38,7 @@
     -color-break-secundary: #8dc3fd;
     -color-long-break: #1a1e43;
     -color-long-break-secundary: #a2b2fd;
-    -color-border-subtle: rgba(255, 255, 255);
+    -color-border-subtle: rgba(255, 255, 255, 0.5);
     -color-border-subtle-light: rgba(255, 255, 255, 0.1);
     -color-bg-calendar: rgba(255, 255, 255, 0.01);
     -color-border: #d1d1d1;
