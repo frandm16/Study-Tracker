@@ -31,6 +31,29 @@
     -fx-letter-spacing: 4px;
 }
 
+.selected-tag-box {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-padding: 0 10;
+    -fx-background-radius: 10;
+    -fx-alignment: CENTER;
+    -fx-cursor: hand;
+}
+
+.selected-tag-circle-color {
+    -fx-translate-y: 1;
+}
+
+.selected-tag-icon {
+    -fx-icon-size:12;
+    -fx-icon-color: -icon-subtle;
+    -fx-translate-y: 1;
+}
+
+.selected-tag-label {
+    -fx-font-size: 12;
+    -fx-text-fill: -text-main;
+}
+
 /* --- buttons --- */
 .button-main {
     -fx-background-color: -text-main;
@@ -1186,18 +1209,48 @@
 }
 
 .menu-icon {
-    -fx-icon-size: 75px;
-    -fx-icon-color: -color-accent;
+    -fx-icon-size: 50;
+    -fx-icon-color: -icon-subtle;
 
 }
 
 .menu-button {
     -fx-background-color: transparent;
-    -fx-border-radius: 250;
-    -fx-border-width: 1;
+    -fx-background-radius: 15;
     -fx-padding: 2px;
     -fx-effect: dropshadow(gaussian, -shadow-default, 12, 0, 0, 4);
     -fx-cursor: hand;
+}
+
+.menu-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-translate-y: -1;
+}
+
+.menu-button:hover .dock-icon {
+    -fx-icon-color: -color-accent;
+}
+
+
+
+
+.main-vbox {
+    -fx-background-color: linear-gradient(from 0% 0% to 50% 50%, -color-bg-subtle, -color-bg-default);
+    -fx-padding: 10 20;
+    -fx-max-width: 450px;
+    -fx-background-radius: 20;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 20;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 15, 0, 0, 8);
+}
+
+.menu-today-container {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -color-bg-subtle, -color-bg-default);
+    -fx-background-radius: 20;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 20;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 15, 0, 0, 8);
+
 }
 
 
@@ -1584,9 +1637,9 @@
 /* --- floating dock --- */
 .floating-dock {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -color-bg-subtle, -color-bg-default);
-    -fx-background-radius: 26;
+    -fx-background-radius: 20;
     -fx-border-color: -color-border-subtle-light;
-    -fx-border-radius: 26;
+    -fx-border-radius: 20;
     -fx-padding: 10 16 10 16;
     -fx-spacing: 10;
     -fx-effect: dropshadow(three-pass-box, -shadow-default, 26, 0, 0, 12);
@@ -1594,7 +1647,7 @@
 
 .dock-button {
     -fx-background-color: transparent;
-    -fx-background-radius: 18;
+    -fx-background-radius: 20;
     -fx-padding: 12 14 12 14;
     -fx-cursor: hand;
 }
@@ -1633,9 +1686,9 @@
 }
 
 .dock-button:selected {
-    -fx-background-color: linear-gradient(from 0% 0% to 75% 75%, -color-accent-light, -color-bg-default);
+    -fx-background-color: linear-gradient(from 0% 0% to 75% 75%, -color-accent-light, transparent);
     -fx-border-color: -color-accent-light;
-    -fx-border-radius: 18;
+    -fx-border-radius: 20;
     -fx-border-width: 1;
     -fx-effect: dropshadow(two-pass-box, -color-accent-light, 5, 0, 0, 0);
 }

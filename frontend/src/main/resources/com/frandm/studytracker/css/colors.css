@@ -32,12 +32,6 @@
     -heatmap-very-high: #ffc933;
     -heatmap-extreme: #ffd976;
 
-    -color-work: #0f2a29;
-    -color-work-secundary: #7aefa7;
-    -color-break: #132246;
-    -color-break-secundary: #8dc3fd;
-    -color-long-break: #1a1e43;
-    -color-long-break-secundary: #a2b2fd;
     -color-border-subtle: rgba(255, 255, 255, 0.5);
     -color-border-subtle-light: rgba(255, 255, 255, 0.1);
     -color-bg-calendar: rgba(255, 255, 255, 0.01);
@@ -78,12 +72,6 @@
     -heatmap-very-high: #d4788e;
     -heatmap-extreme:   #c05070;
 
-    -color-work: #fce8ed;
-    -color-work-secundary: #c54867;
-    -color-break: #e8f0fc;
-    -color-break-secundary: #3050b0;
-    -color-long-break: #f0e8fc;
-    -color-long-break-secundary: #7030b0;
     -color-border-subtle: rgba(228, 163, 179, 0.6);
     -color-border-subtle-light: rgba(228, 163, 179, 0.2);
     -color-bg-calendar:rgba(228, 163, 179, 0.05);
@@ -124,12 +112,6 @@
     -heatmap-very-high: #00e5ff;
     -heatmap-extreme: #80f0ff;
 
-    -color-work: #002a3a;
-    -color-work-secundary: #00e5ff;
-    -color-break: #001a4a;
-    -color-break-secundary: #60a0ff;
-    -color-long-break: #0a0a3a;
-    -color-long-break-secundary: #a0b0ff;
     -color-border-subtle: rgba(0, 212, 255, 0.6);
     -color-border-subtle-light: rgba(0, 212, 255, 0.15);
     -color-bg-calendar:rgba(0, 212, 255, 0.01);
@@ -170,13 +152,6 @@
     -heatmap-high: #a6e3a1;
     -heatmap-very-high: #94e2d5;
     -heatmap-extreme: #89dceb;
-
-    -color-work: #a6e3a1;
-    -color-work-secundary: #315c3f;
-    -color-break: #89dceb;
-    -color-break-secundary: #27385e;
-    -color-long-break: #cba6f7;
-    -color-long-break-secundary: #3b2a51;
 
     -color-border-subtle: rgba(203, 166, 247, 0.4);
     -color-border-subtle-light: rgba(203, 166, 247, 0.12);
@@ -220,13 +195,6 @@
     -heatmap-very-high: #ffb347;
     -heatmap-extreme: #ffd700;
 
-    -color-work: #2e1205;
-    -color-work-secundary: #ffb347;
-    -color-break: #2e0a0a;
-    -color-break-secundary: #ff6b6b;
-    -color-long-break: #2e1e05;
-    -color-long-break-secundary: #ffd700;
-
     -color-border-subtle: rgba(255, 124, 42, 0.4);
     -color-border-subtle-light: rgba(255, 124, 42, 0.12);
     -color-bg-calendar:rgba(255, 124, 42, 0.01);
@@ -269,12 +237,6 @@
     -heatmap-very-high: #c87fff;
     -heatmap-extreme: #e0b0ff;
 
-    -color-work: #1e0a2e;
-    -color-work-secundary: #d080ff;
-    -color-break: #0a1a2e;
-    -color-break-secundary: #80b0ff;
-    -color-long-break: #2e0a1e;
-    -color-long-break-secundary: #ff80c0;
     -color-border-subtle: rgba(176, 96, 255, 0.5);
     -color-border-subtle-light: rgba(176, 96, 255, 0.15);
     -color-bg-calendar:rgba(176, 96, 255, 0.01);

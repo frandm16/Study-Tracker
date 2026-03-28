@@ -190,20 +190,10 @@
                 <VBox fx:id="scheduleListContainer" spacing="10" alignment="TOP_RIGHT" GridPane.columnIndex="2" />
                 <VBox GridPane.columnIndex="1" spacing="20" alignment="CENTER" >
                     <StackPane fx:id="stackpaneCircle"  VBox.vgrow="ALWAYS" >
-                        <VBox spacing="15" alignment="CENTER">
-                            <VBox fx:id="activeTaskContainer"  alignment="CENTER" spacing="8" minHeight="30">
-                            </VBox>
+                        <VBox fx:id="mainVbox" maxWidth="-Infinity" maxHeight="-Infinity" styleClass="main-vbox" alignment="CENTER">
+                            <HBox fx:id="activeTaskContainer" maxWidth="Infinity" maxHeight="-Infinity" alignment="TOP_RIGHT" minHeight="30">
+                            </HBox>
                             <StackPane >
-                                <Circle  fx:id="circleMain" styleClass="circle-main" strokeWidth="8" />
-
-                                <Arc style="-fx-background-color: rgba(255,255,255,0.6)" fx:id="progressArc"
-                                     managed="false"
-                                     startAngle="90"
-                                     strokeWidth="12"
-                                     stroke="#4a90e2"
-                                     fill="transparent"
-                                     strokeLineCap="ROUND"
-                                     mouseTransparent="true" />
                                 <VBox maxWidth="-Infinity" maxHeight="-Infinity" alignment="CENTER">
                                     <VBox  fx:id="timerTextContainer" maxWidth="-Infinity" maxHeight="-Infinity" alignment="CENTER">
                                         <Label fx:id="stateLabel" text="Pomodoro" styleClass="state-label" />
