@@ -271,7 +271,7 @@ public class DailyTab extends VBox {
 
             new Thread(() -> {
                 try {
-                    ApiClient.updateTodo(id, text, completed);
+                    ApiClient.patchTodo(id, text, completed);
                     data.put("text", text);
                     Platform.runLater(() -> {
                         replaceTodoRow(row, data);
@@ -651,7 +651,7 @@ public class DailyTab extends VBox {
 
             new Thread(() -> {
                 try {
-                    ApiClient.toggleDeadlineCompleted(((Number) data.get("id")).longValue());
+                    ApiClient.patchDeadline(((Number) data.get("id")).longValue(), null, null, null, null, false, nextState);
                     Platform.runLater(this::refreshPlannerAndMenu);
                 } catch (Exception error) {
                     error.printStackTrace();

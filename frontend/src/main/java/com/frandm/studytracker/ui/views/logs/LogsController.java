@@ -86,7 +86,7 @@ public class LogsController {
     private void updateTaskCombo(ComboBox<String> taskCombo, String tagName) {
         taskCombo.getItems().clear();
         try {
-            ApiClient.getTasksByTag(tagName).forEach(t -> taskCombo.getItems().add((String) t.get("name")));
+            ApiClient.getTasks(tagName).forEach(t -> taskCombo.getItems().add((String) t.get("name")));
         } catch (Exception e) {
             System.err.println("Error loading tasks: " + e.getMessage());
         }
@@ -127,7 +127,7 @@ public class LogsController {
     public void saveEdit(String title, String desc, String tagName, String taskName) {
         if (sessionToEdit != null) {
             try {
-                ApiClient.updateSession(
+                ApiClient.patchSession(
                         sessionToEdit.getId(),
                         title,
                         desc,

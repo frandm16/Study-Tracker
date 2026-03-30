@@ -106,7 +106,7 @@ public class HistoryTab extends VBox {
         taskFilterCombo.getItems().clear();
         taskFilterCombo.getItems().add("All Tasks");
         try {
-            ApiClient.getTasksByTag(tagName).forEach(t -> taskFilterCombo.getItems().add((String) t.get("name")));
+            ApiClient.getTasks(tagName).forEach(t -> taskFilterCombo.getItems().add((String) t.get("name")));
         } catch (Exception e) {
             System.err.println("Error loading tasks: " + e.getMessage());
         }

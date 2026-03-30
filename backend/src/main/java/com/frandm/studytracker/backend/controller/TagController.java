@@ -19,8 +19,13 @@ public class TagController {
     }
 
     @GetMapping
-    public List<Tag> getAll() {
+    public List<Tag> list() {
         return tagService.getAll();
+    }
+
+    @GetMapping("/{id}")
+    public Tag get(@PathVariable Long id) {
+        return tagService.getById(id);
     }
 
     @PostMapping
@@ -29,14 +34,18 @@ public class TagController {
     }
 
     @PutMapping("/{id}")
-    public Tag update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        String color = (String) body.get("color");
-        return tagService.update(id, color);
+    public Tag update(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return tagService.fullUpdate(id, body.get("name"), body.get("color"));
     }
 
-    @DeleteMapping("/{name}")
-    public ResponseEntity<Void> delete(@PathVariable String name) {
-        tagService.delete(name);
+    @PatchMapping("/{id}")
+    public Tag patch(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return tagService.partialUpdate(id, body.get("name"), body.get("color"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        tagService.delete(id);
         return ResponseEntity.ok().build();
     }
 }

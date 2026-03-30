@@ -102,7 +102,8 @@ public class PomodoroController {
 
     private Map<String, List<String>> tagsWithTasksMap = new HashMap<>();
     private Map<String, String> tagColors = new HashMap<>();
-    private String tagToDelete = null;
+    private Map<String, Long> tagIds = new HashMap<>();
+    private Long tagToDelete = null;
 
     private BackgroundManager backgroundManager;
 
@@ -378,14 +379,19 @@ public class PomodoroController {
     public void refreshDatabaseData() {
         try {
             final Map<String, String> colors = new java.util.LinkedHashMap<>();
-            ApiClient.getTags().forEach(t -> colors.put((String) t.get("name"), (String) t.get("color")));
+            final Map<String, Long> ids = new java.util.LinkedHashMap<>();
+            ApiClient.getTags().forEach(t -> {
+                colors.put((String) t.get("name"), (String) t.get("color"));
+                ids.put((String) t.get("name"), ((Number) t.get("id")).longValue());
+            });
             tagColors = colors;
+            tagIds = ids;
 
             final Map<String, List<String>> map = new java.util.LinkedHashMap<>();
             ApiClient.getTags().forEach(t -> {
                 String tagName = (String) t.get("name");
                 try {
-                    List<String> tasks = ApiClient.getTasksByTag(tagName).stream()
+                    List<String> tasks = ApiClient.getTasks(tagName).stream()
                             .map(task -> (String) task.get("name"))
                             .collect(java.util.stream.Collectors.toList());
                     map.put(tagName, tasks);
@@ -398,7 +404,7 @@ public class PomodoroController {
             System.err.println("Error refreshing data: " + e.getMessage());
         }
 
-        setupManager.renderTagsList(tagsListContainer, tagColors, () ->
+        setupManager.renderTagsList(tagsListContainer, tagColors, tagIds, () ->
                 setupManager.updateFuzzyResults(fuzzySearchInput.getText(), fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
         );
 
@@ -548,7 +554,7 @@ public class PomodoroController {
             refreshDatabaseData();
             logsView.resetAndReload();
 
-            setupManager.renderTagsList(tagsListContainer, tagColors, () ->
+            setupManager.renderTagsList(tagsListContainer, tagColors, tagIds, () ->
                     setupManager.updateFuzzyResults(fuzzySearchInput.getText(), fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
             );
         }
@@ -776,7 +782,7 @@ public class PomodoroController {
         if (opening) {
             fuzzySearchInput.clear();
 
-            setupManager.renderTagsList(tagsListContainer, tagColors, () ->
+            setupManager.renderTagsList(tagsListContainer, tagColors, tagIds, () ->
                     setupManager.updateFuzzyResults(fuzzySearchInput.getText(), fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
             );
 
@@ -1216,8 +1222,8 @@ public class PomodoroController {
         toggleConfirmDelete();
     }
 
-    public void openConfirmDeleteTag(String tagName) {
-        tagToDelete = tagName;
+    public void openConfirmDeleteTag(Long tagId) {
+        tagToDelete = tagId;
         Animations.show(confirmTagOverlay, confirmTagBox, null);
     }
 

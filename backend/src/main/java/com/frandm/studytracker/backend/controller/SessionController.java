@@ -22,31 +22,23 @@ public class SessionController {
     }
 
     @GetMapping
-    public Page<Session> getFiltered(
+    public Page<Session> list(
             @RequestParam(required = false) String tag,
             @RequestParam(required = false) String task,
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return sessionService.getFiltered(tag, task, page, size);
+        return sessionService.getFiltered(tag, task, start, end, page, size);
     }
 
-    @GetMapping("/all")
-    public List<Session> getAll() {
-        return sessionService.getAll();
-    }
-
-    @GetMapping("/range")
-    public List<Session> getByRange(
-            @RequestParam String start,
-            @RequestParam String end) {
-        return sessionService.getByDateRange(
-                LocalDateTime.parse(start),
-                LocalDateTime.parse(end)
-        );
+    @GetMapping("/{id}")
+    public Session get(@PathVariable Long id) {
+        return sessionService.getById(id);
     }
 
     @PostMapping
-    public Session save(@RequestBody Map<String, Object> body) {
+    public Session create(@RequestBody Map<String, Object> body) {
         return sessionService.save(
                 (String) body.get("tagName"),
                 (String) body.get("tagColor"),
@@ -62,7 +54,23 @@ public class SessionController {
 
     @PutMapping("/{id}")
     public Session update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        return sessionService.update(
+        return sessionService.fullUpdate(
+                id,
+                (String) body.get("tagName"),
+                (String) body.get("tagColor"),
+                (String) body.get("taskName"),
+                (String) body.get("title"),
+                (String) body.get("description"),
+                (Integer) body.get("totalMinutes"),
+                DateTimeUtils.parseApiTimestamp((String) body.get("startDate")),
+                DateTimeUtils.parseApiTimestamp((String) body.get("endDate")),
+                (Integer) body.get("rating")
+        );
+    }
+
+    @PatchMapping("/{id}")
+    public Session patch(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return sessionService.partialUpdate(
                 id,
                 (String) body.get("title"),
                 (String) body.get("description"),

@@ -331,7 +331,7 @@ public class StatsDashboardView {
                 String tagName = String.valueOf(tagMap.get("name"));
                 List<String> tasks;
                 try {
-                    tasks = ApiClient.getTasksByTag(tagName).stream()
+                    tasks = ApiClient.getTasks(tagName).stream()
                             .map(taskMap -> String.valueOf(taskMap.get("name")))
                             .sorted()
                             .toList();
