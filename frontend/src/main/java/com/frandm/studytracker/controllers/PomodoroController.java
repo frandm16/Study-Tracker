@@ -10,18 +10,15 @@ import com.frandm.studytracker.models.Session;
 import com.frandm.studytracker.ui.util.Animations;
 import com.frandm.studytracker.ui.util.UIManager;
 import com.frandm.studytracker.ui.views.FloatingDockView;
-import com.frandm.studytracker.ui.views.planner.PlannerController;
+import com.frandm.studytracker.ui.views.dashboard.StatsDashboardView;
 import com.frandm.studytracker.ui.views.logs.LogsView;
-import com.frandm.studytracker.ui.views.StatsDashboard;
+import com.frandm.studytracker.ui.views.planner.PlannerController;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.chart.AreaChart;
-import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.PieChart;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -61,15 +58,14 @@ public class PomodoroController {
     @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, confirmOverlay,
             confirmTagOverlay, plannerOverlayLayer;
     @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
-            plannerContainer, historyContainer, statsPlaceholder, streakVBox, streakImage,
+            plannerContainer, historyContainer,
             fuzzyResultsContainer, tagsListContainer, pomoSettingsPane,
             countdownSettingsPane, settingsBox, confirmTagBox, confirmBox, themeButtonsContainer,
             mainVbox;
     @FXML public HBox starsContainer, editStarsContainer, buttonsHbox, floatingDock, activeTaskContainer;
     @FXML public Label timerLabel, stateLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
             alarmVolumeValLabel, widthSliderValLabel, countdownValLabel, circleSizeValLabel,
-            streakLabel, timeThisWeekLabel, timeLastMonthLabel, tasksLabel, bestDayLabel, selectedNameLabel,
-            notificationVolumeLabel, masterVolumeLabel, backgroundMusicVolumeLabel;
+            selectedNameLabel, notificationVolumeLabel, masterVolumeLabel, backgroundMusicVolumeLabel;
     @FXML public TextField summaryTitle, editTitleField, tagNameInput, fuzzySearchInput;
     @FXML public TextArea summaryDesc, editDescArea;
     @FXML public ComboBox<String> editTagCombo, editTaskCombo;
@@ -80,9 +76,6 @@ public class PomodoroController {
     @FXML public Slider workSlider, shortSlider, longSlider, intervalSlider, alarmVolumeSlider,
             widthSlider, countdownSlider, circleSizeSlider, notificationVolumeSlider, masterVolumeSlider,
             backgroundMusicVolumeSlider;
-    @FXML public AreaChart<String, Number> weeklyLineChart;
-    @FXML public CategoryAxis weeksXAxis;
-    @FXML public PieChart tagPieChart;
     @FXML public ColumnConstraints colRightStats, colCenterStats, colLeftStats;
     @FXML public ScrollPane statsContainer;
     @FXML public MediaView backgroundVideoView;
@@ -101,7 +94,7 @@ public class PomodoroController {
     public HBox titleBar;
 
 
-    private StatsDashboard statsDashboard;
+    private StatsDashboardView statsDashboard;
     private PlannerController plannerController;
     private LogsView logsView;
     private FloatingDockView floatingDockView;
@@ -269,11 +262,7 @@ public class PomodoroController {
         VBox.setVgrow(logsView, Priority.ALWAYS);
 
         // dashboard
-        statsDashboard = new StatsDashboard(
-                timeThisWeekLabel, streakLabel, streakVBox, streakImage, bestDayLabel,
-                tasksLabel, timeLastMonthLabel, weeklyLineChart,
-                tagPieChart, statsPlaceholder
-        );
+        statsDashboard = new StatsDashboardView(statsContainer);
         statsDashboard.refresh();
     }
 
@@ -331,7 +320,9 @@ public class PomodoroController {
                     floatingDockView.setSelectedSection(FloatingDockView.Section.STATS);
                     return;
                 }
-                //statsDashboard.refresh();
+                if (statsDashboard != null) {
+                    statsDashboard.refresh();
+                }
                 uiManager.switchPanels(activePanel, statsContainer, direction);
             }
             case HISTORY -> {
@@ -501,6 +492,9 @@ public class PomodoroController {
         );
 
         setupManager.updateFuzzyResults("", fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected);
+        if (statsDashboard != null) {
+            statsDashboard.refresh();
+        }
     }
 
     private void updateEngineSettings() {
