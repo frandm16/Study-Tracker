@@ -19,7 +19,16 @@ public class TodoItemService {
     }
 
     public List<TodoItem> getFiltered(Long taskId, LocalDate date) {
-        return todoItemRepository.findFiltered(taskId, date);
+        if (taskId != null && date != null) {
+            return todoItemRepository.findByTask_IdAndDateOrderByIdAsc(taskId, date);
+        }
+        if (taskId != null) {
+            return todoItemRepository.findByTask_IdOrderByIdAsc(taskId);
+        }
+        if (date != null) {
+            return todoItemRepository.findByDateOrderByIdAsc(date);
+        }
+        return todoItemRepository.findAllByOrderByIdAsc();
     }
 
     public TodoItem create(Long taskId, String tagName, String taskName, LocalDate date, String text) {
