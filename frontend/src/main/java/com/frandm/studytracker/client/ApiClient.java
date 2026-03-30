@@ -153,7 +153,7 @@ public class ApiClient {
     }
 
     // --- Sessions ---
-    public static Map<String, Object> getSessions(String tag, String task, int page) throws Exception {
+    public static List<Map<String, Object>> getSessions(String tag, String task, int page) throws Exception {
         String url = "/sessions?page=" + page;
         if (tag != null && !tag.isEmpty()) url += "&tag=" + tag;
         if (task != null && !task.isEmpty()) url += "&task=" + task;
@@ -170,7 +170,7 @@ public class ApiClient {
     }
 
     public static List<Map<String, Object>> getSessionsByRange(String start, String end) throws Exception {
-        return mapper.readValue(get("/sessions?start=" + encodeQueryValue(start) + "&end=" + encodeQueryValue(end)), new TypeReference<>() {});
+        return mapper.readValue(get("/sessions/range?start=" + encodeQueryValue(start) + "&end=" + encodeQueryValue(end)), new TypeReference<>() {});
     }
 
     public static void saveSession(String tagName, String tagColor, String taskName,

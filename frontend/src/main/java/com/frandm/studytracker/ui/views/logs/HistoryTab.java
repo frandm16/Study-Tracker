@@ -135,8 +135,7 @@ public class HistoryTab extends VBox {
     private void loadMore() {
         List<Session> sessions;
         try {
-            Map<String, Object> result = ApiClient.getSessions(currentTag, currentTask, currentOffset / PAGE_SIZE);
-            List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+            List<Map<String, Object>> content = ApiClient.getSessions(currentTag, currentTask, currentOffset / PAGE_SIZE);
             sessions = content.stream().map(m -> {
                 Map<?, ?> task = (Map<?, ?>) m.get("task");
                 Map<?, ?> tag = (Map<?, ?>) task.get("tag");

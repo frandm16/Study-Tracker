@@ -29,7 +29,25 @@ public class SessionController {
             @RequestParam(required = false) String end,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return sessionService.getFiltered(tag, task, start, end, page, size).getContent();
+
+        if (start != null && end != null) {
+            return sessionService.getByDateRange(
+                    DateTimeUtils.parseFlexibleTimestamp(start),
+                    DateTimeUtils.parseFlexibleTimestamp(end)
+            );
+        }
+
+        return sessionService.getFiltered(tag, task, page, size).getContent();
+    }
+
+    @GetMapping("/range")
+    public List<Session> getByRange(
+            @RequestParam String start,
+            @RequestParam String end) {
+        return sessionService.getByDateRange(
+                DateTimeUtils.parseFlexibleTimestamp(start),
+                DateTimeUtils.parseFlexibleTimestamp(end)
+        );
     }
 
     @GetMapping("/{id}")

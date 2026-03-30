@@ -20,7 +20,7 @@ public class SessionService {
         this.taskService = taskService;
     }
 
-    public Page<Session> getFiltered(String tag, String task, String start, String end, int page, int size) {
+    public Page<Session> getFiltered(String tag, String task, int page, int size) {
         return sessionRepository.findFiltered(
                 tag == null || tag.isEmpty() ? null : tag,
                 task == null || task.isEmpty() ? null : task,
