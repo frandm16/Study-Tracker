@@ -11,23 +11,53 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import com.frandm.studytracker.core.TagEventBus;
+
 import java.util.Random;
 
 public class ApiClient {
 
     private static final String BASE_URL = System.getenv().getOrDefault("API_URL", "http://localhost:8080/api");
     private static final HttpClient http = HttpClient.newHttpClient();
+    public static final DateTimeFormatter API_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
+
+    private static volatile List<Map<String, Object>> cachedTags = null;
+    private static volatile List<Map<String, Object>> cachedAllTags = null;
+    private static final Map<String, List<Map<String, Object>>> cachedTasksByTag = new java.util.concurrent.ConcurrentHashMap<>();
+    private static volatile long lastCacheInvalidation = 0;
+    private static final long CACHE_TTL_MS = 30_000;
+
+    public static void invalidateTagsCache() {
+        cachedTags = null;
+        cachedAllTags = null;
+        cachedTasksByTag.clear();
+        lastCacheInvalidation = System.currentTimeMillis();
+    }
+
+    public static void invalidateTasksCache(String tagName) {
+        cachedTasksByTag.remove(tagName);
+    }
+
+    private static boolean isCacheExpired() {
+        return System.currentTimeMillis() - lastCacheInvalidation > CACHE_TTL_MS;
+    }
 
     private static String get(String path) throws Exception {
         var req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE_URL + path))
                 .GET()
                 .build();
-        return http.send(req, HttpResponse.BodyHandlers.ofString()).body();
+        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("GET " + path + " failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
+        return response.body();
     }
 
     private static String post(String path, Object body) throws Exception {
@@ -49,7 +79,24 @@ public class ApiClient {
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();
-        return http.send(req, HttpResponse.BodyHandlers.ofString()).body();
+        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("PUT " + path + " failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
+        return response.body();
+    }
+
+    private static String patch(String path, Object body) throws Exception {
+        var req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + path))
+                .header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
+                .build();
+        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("PATCH " + path + " failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
+        return response.body();
     }
 
     private static void delete(String path) throws Exception {
@@ -62,28 +109,126 @@ public class ApiClient {
 
     // --- Tags ---
     public static List<Map<String, Object>> getTags() throws Exception {
-        return mapper.readValue(get("/tags"), new TypeReference<>() {});
+        if (cachedTags != null && !isCacheExpired()) return cachedTags;
+        List<Map<String, Object>> result = mapper.readValue(get("/tags"), new TypeReference<>() {});
+        cachedTags = result;
+        return result;
+    }
+
+    public static List<Map<String, Object>> getAllTags() throws Exception {
+        if (cachedAllTags != null && !isCacheExpired()) return cachedAllTags;
+        List<Map<String, Object>> result = mapper.readValue(get("/tags/all"), new TypeReference<>() {});
+        cachedAllTags = result;
+        return result;
+    }
+
+    public static List<Map<String, Object>> getFavoriteTags() throws Exception {
+        return mapper.readValue(get("/tags/favorites"), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> getTag(long id) throws Exception {
+        return mapper.readValue(get("/tags/" + id), new TypeReference<>() {});
     }
 
     public static Map<String, Object> createTag(String name, String color) throws Exception {
-        return mapper.readValue(post("/tags", Map.of("name", name, "color", color)), new TypeReference<>() {});
+        Map<String, Object> result = mapper.readValue(post("/tags", Map.of("name", name, "color", color)), new TypeReference<>() {});
+        invalidateTagsCache();
+        Long id = result.get("id") != null ? ((Number) result.get("id")).longValue() : null;
+        TagEventBus.getInstance().publish(TagEventBus.Type.CREATED, id, name);
+        return result;
     }
 
-    public static void deleteTag(String name) throws Exception {
-        delete("/tags/" + name);
+    public static Map<String, Object> updateTag(long id, String name, String color) throws Exception {
+        Map<String, Object> result = mapper.readValue(put("/tags/" + id, Map.of("name", name, "color", color)), new TypeReference<>() {});
+        invalidateTagsCache();
+        TagEventBus.getInstance().publish(TagEventBus.Type.UPDATED, id, name);
+        return result;
+    }
+
+    public static Map<String, Object> patchTag(long id, String name, String color) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (name != null) body.put("name", name);
+        if (color != null) body.put("color", color);
+        Map<String, Object> result = mapper.readValue(patch("/tags/" + id, body), new TypeReference<>() {});
+        invalidateTagsCache();
+        TagEventBus.getInstance().publish(TagEventBus.Type.UPDATED, id, name);
+        return result;
+    }
+
+    public static Map<String, Object> patchTag(long id, Map<String, Object> body) throws Exception {
+        Map<String, Object> result = mapper.readValue(patch("/tags/" + id, body), new TypeReference<>() {});
+        invalidateTagsCache();
+        String name = body.containsKey("name") ? (String) body.get("name") : null;
+        if (body.containsKey("isArchived")) {
+            TagEventBus.getInstance().publish(TagEventBus.Type.ARCHIVE_TOGGLED, id, name);
+        } else if (body.containsKey("isFavorite")) {
+            TagEventBus.getInstance().publish(TagEventBus.Type.FAVORITE_TOGGLED, id, name);
+        } else {
+            TagEventBus.getInstance().publish(TagEventBus.Type.UPDATED, id, name);
+        }
+        return result;
+    }
+
+    public static void deleteTag(long id) throws Exception {
+        delete("/tags/" + id);
+        invalidateTagsCache();
+        TagEventBus.getInstance().publish(TagEventBus.Type.DELETED, id, null);
     }
 
     // --- Tasks ---
-    public static List<Map<String, Object>> getTasksByTag(String tag) throws Exception {
-        return mapper.readValue(get("/tasks?tag=" + tag), new TypeReference<>() {});
+    public static List<Map<String, Object>> getTasks(String tag) throws Exception {
+        if (tag != null && !tag.isEmpty()) {
+            if (cachedTasksByTag.containsKey(tag) && !isCacheExpired()) {
+                return cachedTasksByTag.get(tag);
+            }
+            List<Map<String, Object>> result = mapper.readValue(get("/tasks?tag=" + tag), new TypeReference<>() {});
+            cachedTasksByTag.put(tag, result);
+            return result;
+        }
+        return mapper.readValue(get("/tasks"), new TypeReference<>() {});
+    }
+
+    public static List<Map<String, Object>> getAllTasks() throws Exception {
+        return mapper.readValue(get("/tasks"), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> getTask(long id) throws Exception {
+        return mapper.readValue(get("/tasks/" + id), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> createTask(String tagName, String tagColor, String taskName) throws Exception {
+        Map<String, Object> result = mapper.readValue(post("/tasks", Map.of("tagName", tagName, "tagColor", tagColor, "taskName", taskName)), new TypeReference<>() {});
+        invalidateTasksCache(tagName);
+        return result;
     }
 
     public static void getOrCreateTask(String tagName, String tagColor, String taskName) throws Exception {
         post("/tasks", Map.of("tagName", tagName, "tagColor", tagColor, "taskName", taskName));
+        invalidateTasksCache(tagName);
+    }
+
+    public static Map<String, Object> updateTask(long id, String tagName, String tagColor, String name) throws Exception {
+        Map<String, Object> result = mapper.readValue(put("/tasks/" + id, Map.of("tagName", tagName, "tagColor", tagColor, "name", name)), new TypeReference<>() {});
+        invalidateTasksCache(tagName);
+        return result;
+    }
+
+    public static Map<String, Object> patchTask(long id, String tagName, String tagColor, String name) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (tagName != null) body.put("tagName", tagName);
+        if (tagColor != null) body.put("tagColor", tagColor);
+        if (name != null) body.put("name", name);
+        Map<String, Object> result = mapper.readValue(patch("/tasks/" + id, body), new TypeReference<>() {});
+        invalidateTasksCache(tagName);
+        return result;
+    }
+
+    public static void deleteTask(long id) throws Exception {
+        delete("/tasks/" + id);
     }
 
     // --- Sessions ---
-    public static Map<String, Object> getSessions(String tag, String task, int page) throws Exception {
+    public static List<Map<String, Object>> getSessions(String tag, String task, int page) throws Exception {
         String url = "/sessions?page=" + page;
         if (tag != null && !tag.isEmpty()) url += "&tag=" + tag;
         if (task != null && !task.isEmpty()) url += "&task=" + task;
@@ -95,10 +240,12 @@ public class ApiClient {
         return mapper.readValue(json, new TypeReference<>() {});
     }
 
+    public static Map<String, Object> getSession(long id) throws Exception {
+        return mapper.readValue(get("/sessions/" + id), new TypeReference<>() {});
+    }
+
     public static List<Map<String, Object>> getSessionsByRange(String start, String end) throws Exception {
-        String Start = start.replace(" ", "%20");
-        String End = end.replace(" ", "%20");
-        return mapper.readValue(get("/sessions/range?start=" + Start + "&end=" + End), new TypeReference<>() {});
+        return mapper.readValue(get("/sessions/range?start=" + encodeQueryValue(start) + "&end=" + encodeQueryValue(end)), new TypeReference<>() {});
     }
 
     public static void saveSession(String tagName, String tagColor, String taskName,
@@ -113,8 +260,20 @@ public class ApiClient {
         ));
     }
 
-    public static void updateSession(long id, String title, String description, int rating) throws Exception {
-        put("/sessions/" + id, Map.of("title", title, "description", description, "rating", rating));
+    public static Map<String, Object> updateSession(long id, String tagName, String tagColor, String taskName,
+                                                     String title, String description,
+                                                     int totalMinutes, String startDate,
+                                                     String endDate, int rating) throws Exception {
+        return mapper.readValue(put("/sessions/" + id, Map.of(
+                "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
+                "title", title, "description", description,
+                "totalMinutes", totalMinutes, "startDate", startDate,
+                "endDate", endDate, "rating", rating
+        )), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> patchSession(long id, String title, String description, int rating) throws Exception {
+        return mapper.readValue(patch("/sessions/" + id, Map.of("title", title, "description", description, "rating", rating)), new TypeReference<>() {});
     }
 
     public static void deleteSession(long id) throws Exception {
@@ -123,25 +282,38 @@ public class ApiClient {
 
     // --- Scheduled sessions ---
     public static List<Map<String, Object>> getScheduledSessions(String start, String end) throws Exception {
-        String Start = start.replace(" ", "%20");
-        String End = end.replace(" ", "%20");
-        return mapper.readValue(get("/scheduled?start=" + Start + "&end=" + End), new TypeReference<>() {});
+        if (start != null && end != null && !start.isEmpty() && !end.isEmpty()) {
+            return mapper.readValue(get("/scheduled?start=" + encodeQueryValue(start) + "&end=" + encodeQueryValue(end)), new TypeReference<>() {});
+        }
+        return mapper.readValue(get("/scheduled"), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> getScheduledSession(long id) throws Exception {
+        return mapper.readValue(get("/scheduled/" + id), new TypeReference<>() {});
     }
 
     public static void saveScheduledSession(String tagName, String taskName,
                                             String title, String start, String end) throws Exception {
         post("/scheduled", Map.of(
                 "tagName", tagName, "taskName", taskName,
-                "title", title, "startTime", start, "endTime", end
+                "title", title, "startDate", start, "endDate", end
         ));
     }
 
-    public static void updateScheduledSession(long id, String tagName, String taskName,
-                                              String title, String start, String end) throws Exception {
-        put("/scheduled/" + id, Map.of(
+    public static Map<String, Object> updateScheduledSession(long id, String tagName, String taskName,
+                                                              String title, String start, String end) throws Exception {
+        return mapper.readValue(put("/scheduled/" + id, Map.of(
                 "tagName", tagName, "taskName", taskName,
-                "title", title, "startTime", start, "endTime", end
-        ));
+                "title", title, "startDate", start, "endDate", end
+        )), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> patchScheduledSession(long id, String title, String start, String end) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (title != null) body.put("title", title);
+        if (start != null) body.put("startDate", start);
+        if (end != null) body.put("endDate", end);
+        return mapper.readValue(patch("/scheduled/" + id, body), new TypeReference<>() {});
     }
 
     public static void deleteScheduledSession(long id) throws Exception {
@@ -179,7 +351,7 @@ public class ApiClient {
                 }
             }
 
-            String tasksJson = get("/tasks/all");
+            String tasksJson = get("/tasks");
             List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
 
             if (taskList.isEmpty()) {
@@ -211,8 +383,8 @@ public class ApiClient {
                                 "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
                                 "title", "Test session", "description", "Generated session",
                                 "totalMinutes", duration,
-                                "startDate", start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                "endDate", end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                "startDate", formatApiTimestamp(start),
+                                "endDate", formatApiTimestamp(end),
                                 "rating", random.nextInt(6)
                         ));
 
@@ -234,7 +406,7 @@ public class ApiClient {
         String[] titles = {"Deep Work Session", "Study Sprint", "Focus Block", "Practice Run", "Module Review"};
 
         try {
-            String tasksJson = get("/tasks/all");
+            String tasksJson = get("/tasks");
             List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
 
             if (taskList.isEmpty()) {
@@ -264,8 +436,8 @@ public class ApiClient {
 
                         saveScheduledSession(tagName, taskName,
                                 titles[random.nextInt(titles.length)],
-                                start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                                formatApiTimestamp(start),
+                                formatApiTimestamp(end));
 
                         currentTime = end.plusMinutes(15 + random.nextInt(31));
                         if (currentTime.getHour() == 23) break;
@@ -284,12 +456,11 @@ public class ApiClient {
         LocalDate today = LocalDate.now();
         String[] titles = {"Final Exam", "Project Delivery", "Lab Report", "Essay Submission", "Quiz", "Thesis Draft"};
         String[] urgencies = {"High", "Medium", "Low"};
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         final int daysBefore = 25;
         final int daysAfter = 25;
 
         try {
-            String tasksJson = get("/tasks/all");
+            String tasksJson = get("/tasks");
             List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
             if (taskList.isEmpty()) return;
 
@@ -299,6 +470,7 @@ public class ApiClient {
 
                 LocalDate dueDate = today.plusDays(offset);
                 boolean allDay = random.nextDouble() < 0.35;
+                boolean isCompleted = offset < -3 && random.nextDouble() < 0.45;
                 LocalDateTime dueDateTime = allDay
                         ? dueDate.atStartOfDay()
                         : dueDate.atTime(8 + random.nextInt(13), random.nextBoolean() ? 0 : 30);
@@ -310,8 +482,9 @@ public class ApiClient {
                         titles[random.nextInt(titles.length)] + " - " + task.get("name"),
                         "Generated automatic deadline for testing UI",
                         urgencies[random.nextInt(urgencies.length)],
-                        dueDateTime.format(fmt),
-                        allDay
+                        formatApiTimestamp(dueDateTime),
+                        allDay,
+                        isCompleted
                 );
             }
         } catch (Exception e) {
@@ -319,43 +492,352 @@ public class ApiClient {
         }
     }
 
+    public static void generateRandomNotes() {
+        System.out.println("[generateRandomNotes] Starting...");
+        Random random = new Random();
+        LocalDate today = LocalDate.now();
+        String[] openings = {
+                "Main focus today:",
+                "Plan for the day:",
+                "Priority list:",
+                "Study direction:",
+                "What matters today:"
+        };
+        String[] goals = {
+                "finish the pending module review",
+                "push the backend refactor a bit further",
+                "clean up planner interactions",
+                "review notes and consolidate concepts",
+                "close the open task list"
+        };
+        String[] blockers = {
+                "Need to avoid context switching.",
+                "Keep sessions shorter and more intentional.",
+                "Watch out for distractions in the afternoon.",
+                "Leave time for review at the end.",
+                "Focus on one task at a time."
+        };
+        String[] wrapUps = {
+                "If time remains, prepare tomorrow.",
+                "A short recap at night would help.",
+                "Remember to check deadlines before stopping.",
+                "Try to end the day with a clean board.",
+                "Leave the next step obvious."
+        };
+
+        try {
+            int total = 120;
+            for (int i = 0; i < total; i++) {
+                LocalDate date = today.minusDays(i);
+                if (random.nextDouble() < 0.72) {
+                    String content = String.join("\n",
+                            openings[random.nextInt(openings.length)],
+                            "- " + goals[random.nextInt(goals.length)],
+                            "- " + goals[random.nextInt(goals.length)],
+                            blockers[random.nextInt(blockers.length)],
+                            wrapUps[random.nextInt(wrapUps.length)]
+                    );
+                    saveNote(date, content);
+                }
+            }
+            System.out.println("[generateRandomNotes] Done ✓");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void generateRandomTodos() {
+        System.out.println("[generateRandomTodos] Starting...");
+        Random random = new Random();
+        LocalDate today = LocalDate.now();
+        String[] prefixes = {
+                "Review",
+                "Draft",
+                "Refactor",
+                "Check",
+                "Prepare",
+                "Finish",
+                "Organize"
+        };
+        String[] subjects = {
+                "planner UI",
+                "session notes",
+                "database schema",
+                "weekly plan",
+                "deadline details",
+                "statistics screen",
+                "study backlog"
+        };
+
+        try {
+            String tasksJson = get("/tasks");
+            List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
+            if (taskList.isEmpty()) {
+                System.out.println("[generateRandomTodos] Skipped: no tasks available");
+                return;
+            }
+
+            int total = 45;
+            for (int offset = -20; offset <= 24; offset++) {
+                LocalDate date = today.plusDays(offset);
+                int todosToday = random.nextInt(4);
+                for (int i = 0; i < todosToday; i++) {
+                    Map<String, Object> task = taskList.get(random.nextInt(taskList.size()));
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> tagMap = (Map<String, Object>) task.get("tag");
+
+                    Map<String, Object> created = createTodo(
+                            date,
+                            prefixes[random.nextInt(prefixes.length)] + " " + subjects[random.nextInt(subjects.length)],
+                            (String) tagMap.get("name"),
+                            (String) task.get("name")
+                    );
+
+                    boolean shouldComplete = offset < 0 && random.nextDouble() < 0.55;
+                    if (shouldComplete && created.get("id") instanceof Number number) {
+                        updateTodoCompleted(number.longValue(), true);
+                    }
+                }
+            }
+            System.out.println("[generateRandomTodos] Done ✓");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     // --- Deadlines ---
     public static List<Map<String, Object>> getDeadlines(String start, String end) throws Exception {
-        String Start = start.replace(" ", "%20");
-        String End = end.replace(" ", "%20");
-        return mapper.readValue(get("/deadlines?start=" + Start + "&end=" + End), new TypeReference<>() {});
+        if (start != null && end != null && !start.isEmpty() && !end.isEmpty()) {
+            return mapper.readValue(get("/deadlines?start=" + encodeQueryValue(start) + "&end=" + encodeQueryValue(end)), new TypeReference<>() {});
+        }
+        return mapper.readValue(get("/deadlines"), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> getDeadline(long id) throws Exception {
+        return mapper.readValue(get("/deadlines/" + id), new TypeReference<>() {});
+    }
+
+    private static Map<String, Object> createDeadline(String tagName, String tagColor, String taskName,
+                                                      String title, String description, String urgency,
+                                                      String dueDate, boolean allDay, Boolean isCompleted) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tagName", tagName);
+        body.put("tagColor", tagColor);
+        body.put("taskName", taskName);
+        body.put("title", title);
+        body.put("description", description);
+        body.put("urgency", urgency);
+        body.put("dueDate", dueDate);
+        body.put("allDay", allDay);
+        if (isCompleted != null) body.put("isCompleted", isCompleted);
+        return mapper.readValue(post("/deadlines", body), new TypeReference<>() {});
     }
 
     public static void saveDeadline(String tagName, String tagColor, String taskName,
                                     String title, String description, String urgency,
-                                    String dueDate, boolean allDay) throws Exception {
-        post("/deadlines", Map.of(
-                "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
-                "title", title, "description", description, "urgency", urgency,
-                "dueDate", dueDate, "allDay", allDay
-        ));
+                                    String dueDate, boolean allDay, Boolean isCompleted) throws Exception {
+        createDeadline(tagName, tagColor, taskName, title, description, urgency, dueDate, allDay, isCompleted);
     }
 
-    public static void updateDeadline(long id, String tagName, String tagColor, String taskName,
-                                      String title, String description, String urgency,
-                                      String dueDate, boolean allDay) throws Exception {
-        var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/deadlines/" + id))
-                .header("Content-Type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(Map.of(
-                        "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
-                        "title", title, "description", description, "urgency", urgency,
-                        "dueDate", dueDate, "allDay", allDay
-                ))))
-                .build();
-        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() >= 400) {
-            throw new RuntimeException("Deadline update failed: HTTP " + response.statusCode() + " - " + response.body());
-        }
+    public static Map<String, Object> updateDeadline(long id, String tagName, String tagColor, String taskName,
+                                       String title, String description, String urgency,
+                                       String dueDate, boolean allDay, Boolean isCompleted) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tagName", tagName);
+        body.put("tagColor", tagColor);
+        body.put("taskName", taskName);
+        body.put("title", title);
+        body.put("description", description);
+        body.put("urgency", urgency);
+        body.put("dueDate", dueDate);
+        body.put("allDay", allDay);
+        if (isCompleted != null) body.put("isCompleted", isCompleted);
+        return mapper.readValue(put("/deadlines/" + id, body), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> patchDeadline(long id, String title, String description, String urgency,
+                                       String dueDate, boolean allDay, Boolean isCompleted) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (title != null) body.put("title", title);
+        if (description != null) body.put("description", description);
+        if (urgency != null) body.put("urgency", urgency);
+        if (dueDate != null) body.put("dueDate", dueDate);
+        body.put("allDay", allDay);
+        if (isCompleted != null) body.put("isCompleted", isCompleted);
+        return mapper.readValue(patch("/deadlines/" + id, body), new TypeReference<>() {});
+    }
+
+    public static void toggleDeadlineCompleted(long id) throws Exception {
+        patch("/deadlines/" + id, Map.of("isCompleted", true));
     }
 
     public static void deleteDeadline(long id) throws Exception {
         delete("/deadlines/" + id);
+    }
+
+    public static String formatApiTimestamp(LocalDateTime value) {
+        return value.format(API_TIMESTAMP_FORMAT);
+    }
+
+    public static LocalDateTime parseApiTimestamp(Object value) {
+        if (value instanceof LocalDateTime dateTime) return dateTime;
+        if (value == null) return null;
+        String text = value.toString();
+        try {
+            return text.contains("T")
+                    ? LocalDateTime.parse(text)
+                    : LocalDateTime.parse(text, API_TIMESTAMP_FORMAT);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static boolean parseBooleanFlag(Object value) {
+        if (value instanceof Boolean booleanValue) return booleanValue;
+        return value != null && Boolean.parseBoolean(value.toString());
+    }
+
+    public static boolean extractCompletedFlag(Map<String, Object> item) {
+        return parseBooleanFlag(item.containsKey("isCompleted") ? item.get("isCompleted") : item.get("completed"));
+    }
+
+    private static boolean isMethodNotAllowed(Exception error) {
+        return error.getMessage() != null && error.getMessage().contains("HTTP 405");
+    }
+
+    private static void syncCompletedState(Map<String, Object> deadline, Boolean desiredCompleted) throws Exception {
+        if (desiredCompleted == null) return;
+        boolean currentCompleted = extractCompletedFlag(deadline);
+        if (currentCompleted == desiredCompleted) return;
+        Object id = deadline.get("id");
+        if (id instanceof Number number) {
+            toggleDeadlineCompleted(number.longValue());
+        }
+    }
+
+    private static String encodeQueryValue(String value) {
+        return value.replace(" ", "%20");
+    }
+
+    // --- Notes ---
+
+    public static List<Map<String, Object>> getNotes() throws Exception {
+        return mapper.readValue(get("/notes"), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> getNote(long id) throws Exception {
+        return mapper.readValue(get("/notes/" + id), new TypeReference<>() {});
+    }
+
+    public static String getNoteByDate(LocalDate date) throws Exception {
+        try {
+            List<Map<String, Object>> notes = getNotes();
+            String dateStr = date.toString();
+            for (Map<String, Object> note : notes) {
+                if (dateStr.equals(String.valueOf(note.get("date")))) {
+                    return note.get("content") != null ? note.get("content").toString() : "";
+                }
+            }
+            return "";
+        } catch (Exception e) {
+            System.err.println("Error fetching note: " + e.getMessage());
+            return "";
+        }
+    }
+
+    public static Map<String, Object> createNote(LocalDate date, String content) throws Exception {
+        return mapper.readValue(post("/notes", Map.of("date", date.toString(), "content", content)), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> updateNote(long id, LocalDate date, String content) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("date", date.toString());
+        body.put("content", content);
+        return mapper.readValue(put("/notes/" + id, body), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> patchNote(long id, String content) throws Exception {
+        return mapper.readValue(patch("/notes/" + id, Map.of("content", content)), new TypeReference<>() {});
+    }
+
+    public static void saveNote(LocalDate date, String content) throws Exception {
+        try {
+            List<Map<String, Object>> notes = getNotes();
+            String dateStr = date.toString();
+            for (Map<String, Object> note : notes) {
+                if (dateStr.equals(String.valueOf(note.get("date")))) {
+                    Object idObj = note.get("id");
+                    if (idObj instanceof Number number) {
+                        patchNote(number.longValue(), content);
+                        return;
+                    }
+                }
+            }
+            createNote(date, content);
+        } catch (Exception e) {
+            createNote(date, content);
+        }
+    }
+
+    public static void deleteNote(long id) throws Exception {
+        delete("/notes/" + id);
+    }
+
+
+    // --- Todos ---
+
+    public static List<Map<String, Object>> getTodosByDate(LocalDate date) throws Exception {
+        return getTodos(date, null);
+    }
+
+    public static List<Map<String, Object>> getTodos(LocalDate date, Long taskId) throws Exception {
+        String path = "/todos?date=" + date;
+        if (taskId != null) {
+            path += "&taskId=" + taskId;
+        }
+        return mapper.readValue(get(path), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> getTodo(long id) throws Exception {
+        return mapper.readValue(get("/todos/" + id), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> createTodo(LocalDate date, String text, String tagName, String taskName) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("date", date.toString());
+        body.put("text", text);
+        body.put("tagName", tagName);
+        body.put("taskName", taskName);
+        return mapper.readValue(
+                post("/todos", body),
+                new TypeReference<>() {}
+        );
+    }
+
+    public static Map<String, Object> updateTodo(long id, Long taskId, String tagName, String taskName, LocalDate date, String text, Boolean completed) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (taskId != null) body.put("taskId", taskId);
+        if (tagName != null) body.put("tagName", tagName);
+        if (taskName != null) body.put("taskName", taskName);
+        if (date != null) body.put("date", date.toString());
+        if (text != null) body.put("text", text);
+        if (completed != null) body.put("completed", completed);
+        return mapper.readValue(put("/todos/" + id, body), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> patchTodo(long id, String text, Boolean completed) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (text != null) body.put("text", text);
+        if (completed != null) body.put("completed", completed);
+        return mapper.readValue(patch("/todos/" + id, body), new TypeReference<>() {});
+    }
+
+    public static void updateTodoCompleted(long id, boolean completed) throws Exception {
+        patch("/todos/" + id, Map.of("completed", completed));
+    }
+
+    public static void deleteTodo(long id) throws Exception {
+        delete("/todos/" + id);
     }
 
 }

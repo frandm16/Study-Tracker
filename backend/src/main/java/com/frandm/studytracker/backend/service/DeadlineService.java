@@ -1,10 +1,8 @@
 package com.frandm.studytracker.backend.service;
 
 import com.frandm.studytracker.backend.model.Deadline;
-import com.frandm.studytracker.backend.model.Tag;
 import com.frandm.studytracker.backend.model.Task;
 import com.frandm.studytracker.backend.repository.DeadlineRepository;
-import com.frandm.studytracker.backend.repository.TagRepository;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,58 +12,87 @@ public class DeadlineService {
 
     private final DeadlineRepository deadlineRepository;
     private final TaskService taskService;
-    private final TagRepository tagRepository;
 
-    public DeadlineService(DeadlineRepository deadlineRepository, TaskService taskService, TagRepository tagRepository) {
+    public DeadlineService(DeadlineRepository deadlineRepository, TaskService taskService) {
         this.deadlineRepository = deadlineRepository;
         this.taskService = taskService;
-        this.tagRepository = tagRepository;
     }
 
     public List<Deadline> getByDateRange(LocalDateTime start, LocalDateTime end) {
         return deadlineRepository.findByDateRange(start, end);
     }
 
-    public Deadline save(String tagName, String tagColor, String taskName,
-                         String title, String description, String urgency,
-                         LocalDateTime dueDate, Boolean allDay) {
-        Deadline deadline = new Deadline();
-        return populateAndSave(deadline, tagName, tagColor, taskName, title, description, urgency, dueDate, allDay);
+    public List<Deadline> getAll() {
+        return deadlineRepository.findAll();
     }
 
-    public Deadline update(Long id, String tagName, String tagColor, String taskName,
-                           String title, String description, String urgency,
-                           LocalDateTime dueDate, Boolean allDay) {
-        Deadline deadline = deadlineRepository.findById(id).orElseThrow();
-        return populateAndSave(deadline, tagName, tagColor, taskName, title, description, urgency, dueDate, allDay);
+    public Deadline getById(Long id) {
+        return deadlineRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Deadline not found: " + id));
+    }
+
+    public Deadline save(String tagName, String tagColor, String taskName,
+                         String title, String description, String urgency,
+                         LocalDateTime dueDate, Boolean allDay, Boolean isCompleted) {
+        Deadline deadline = new Deadline();
+        return populateAndSave(deadline, tagName, tagColor, taskName, title, description, urgency, dueDate, allDay, isCompleted);
+    }
+
+    public Deadline fullUpdate(Long id, String tagName, String tagColor, String taskName,
+                               String title, String description, String urgency,
+                               LocalDateTime dueDate, Boolean allDay, Boolean isCompleted) {
+        Deadline deadline = deadlineRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Deadline not found: " + id));
+        deadline.setTask(resolveTask(tagName, tagColor, taskName));
+        deadline.setTitle(title);
+        deadline.setDescription(description);
+        deadline.setUrgency(urgency);
+        deadline.setDueDate(dueDate);
+        deadline.setAllDay(allDay);
+        if (isCompleted != null) deadline.setIsCompleted(isCompleted);
+        return deadlineRepository.save(deadline);
+    }
+
+    public Deadline partialUpdate(Long id, String title, String description,
+                                  String urgency, LocalDateTime dueDate,
+                                  Boolean allDay, Boolean isCompleted) {
+        Deadline deadline = deadlineRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Deadline not found: " + id));
+        if (title != null) deadline.setTitle(title);
+        if (description != null) deadline.setDescription(description);
+        if (urgency != null) deadline.setUrgency(urgency);
+        if (dueDate != null) deadline.setDueDate(dueDate);
+        if (allDay != null) deadline.setAllDay(allDay);
+        if (isCompleted != null) deadline.setIsCompleted(isCompleted);
+        return deadlineRepository.save(deadline);
     }
 
     private Deadline populateAndSave(Deadline deadline, String tagName, String tagColor, String taskName,
                                      String title, String description, String urgency,
-                                     LocalDateTime dueDate, Boolean allDay) {
+                                     LocalDateTime dueDate, Boolean allDay, Boolean isCompleted) {
+        boolean isNewDeadline = deadline.getId() == null;
 
-        if (taskName != null && !taskName.isEmpty()) {
-            Task task = taskService.getOrCreate(tagName, tagColor, taskName);
-            deadline.setTask(task);
-            deadline.setTag(task.getTag());
-        } else if (tagName != null && !tagName.isEmpty()) {
-            Tag tag = tagRepository.findAll().stream()
-                    .filter(t -> t.getName().equals(tagName))
-                    .findFirst().orElse(null);
-            deadline.setTag(tag);
-        }
+        deadline.setTask(resolveTask(tagName, tagColor, taskName));
 
         deadline.setTitle(title);
         deadline.setDescription(description);
         deadline.setUrgency(urgency);
         deadline.setDueDate(dueDate);
         deadline.setAllDay(allDay);
+        if (isCompleted != null) {
+            deadline.setIsCompleted(isCompleted);
+        } else if (isNewDeadline) {
+            deadline.setIsCompleted(false);
+        }
 
         return deadlineRepository.save(deadline);
     }
 
-    public List<Deadline> getAll() {
-        return deadlineRepository.findAll();
+    private Task resolveTask(String tagName, String tagColor, String taskName) {
+        if (taskName == null || taskName.isEmpty()) {
+            throw new RuntimeException("Deadline taskName is required");
+        }
+        return taskService.getOrCreate(tagName, tagColor, taskName);
     }
 
     public void delete(Long id) {

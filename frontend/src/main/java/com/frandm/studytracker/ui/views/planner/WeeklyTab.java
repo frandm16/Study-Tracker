@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.planner;
 
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.TagEventBus;
 import com.frandm.studytracker.controllers.PomodoroController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -15,7 +16,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class WeeklyTab extends VBox {
 
@@ -27,8 +27,8 @@ public class WeeklyTab extends VBox {
     private Popup activePopup = null;
     private long lastPopupCloseTime = 0;
     private final double ROW_HEIGHT = 60.0;
-    private static final double ALL_DAY_MIN_HEIGHT = 30.0;
-    private static final double DEADLINE_HEIGHT = 28.0;
+    private static final double ALL_DAY_MIN_HEIGHT = 45.0;
+    private static final double DEADLINE_HEIGHT = 45.0;
     private final Pane[] dayColumns = new Pane[7];
     private final Pane[] deadlineLayers = new Pane[7];
     private final VBox[] allDayDeadlineContainers = new VBox[7];
@@ -36,6 +36,9 @@ public class WeeklyTab extends VBox {
     private static final double MIN_BLOCK_HEIGHT = 30.0;
     private Runnable refreshAction = () -> {};
     private double allDaySectionHeight = ALL_DAY_MIN_HEIGHT;
+    private volatile PlannerHelpers.TagSelectionData cachedTagData;
+    private List<Map<String, Object>> weeklyScheduled = new ArrayList<>();
+    private List<Map<String, Object>> weeklyDeadlines = new ArrayList<>();
 
     public WeeklyTab(PomodoroController controller) {
         this.currentWeekStart = LocalDate.now().with(DayOfWeek.MONDAY);
@@ -43,10 +46,20 @@ public class WeeklyTab extends VBox {
         this.getStyleClass().add("calendar-root");
         VBox.setVgrow(this, Priority.ALWAYS);
         initializeUI();
+        TagEventBus.getInstance().subscribe(event -> {
+            cachedTagData = null;
+        });
     }
 
     public void setRefreshAction(Runnable refreshAction) {
         this.refreshAction = refreshAction != null ? refreshAction : () -> {};
+    }
+
+    public void refreshData(LocalDate weekStart, List<Map<String, Object>> scheduled, List<Map<String, Object>> deadlines) {
+        this.currentWeekStart = weekStart.with(DayOfWeek.MONDAY);
+        this.weeklyScheduled = scheduled != null ? new ArrayList<>(scheduled) : new ArrayList<>();
+        this.weeklyDeadlines = deadlines != null ? new ArrayList<>(deadlines) : new ArrayList<>();
+        refresh();
     }
 
     public void openCreateScheduledSession(double screenX, double screenY) {
@@ -74,10 +87,9 @@ public class WeeklyTab extends VBox {
     public void refresh() {
         calendarGrid.getChildren().clear();
         setupGridConstraints();
-        List<Map<String, Object>> deadlines = loadWeekDeadlines();
-        updateAllDaySectionHeight(deadlines);
+        updateAllDaySectionHeight(weeklyDeadlines);
         renderBaseGrid();
-        drawContent(deadlines);
+        drawContent(weeklyScheduled, weeklyDeadlines);
         drawTimeIndicator();
     }
 
@@ -192,20 +204,17 @@ public class WeeklyTab extends VBox {
         }
     }
 
-    private void drawContent(List<Map<String, Object>> deadlines) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private void drawContent(List<Map<String, Object>> sessions, List<Map<String, Object>> deadlines) {
         renderAllDayDeadlines(deadlines);
-        String startRange = currentWeekStart.atStartOfDay().format(fmt);
-        String endRange = currentWeekStart.plusDays(6).atTime(23, 59, 59).format(fmt);
-        List<Map<String, Object>> sessions;
-        try { sessions = ApiClient.getScheduledSessions(startRange, endRange); } catch (Exception e) { sessions = new ArrayList<>(); }
         Map<Integer, List<Map<String, Object>>> dayMap = new HashMap<>();
         for (Map<String, Object> s : sessions) {
             String startStr = getStartTime(s);
             if (startStr == null) continue;
-            LocalDateTime start = startStr.contains("T") ? LocalDateTime.parse(startStr) : LocalDateTime.parse(startStr, fmt);
+            LocalDateTime start = parseDateValue(startStr);
             String endStr = getEndTime(s);
-            LocalDateTime end = (endStr != null) ? (endStr.contains("T") ? LocalDateTime.parse(endStr) : LocalDateTime.parse(endStr, fmt)) : start.plusHours(1);
+            LocalDateTime end = endStr != null ? parseDateValue(endStr) : start.plusHours(1);
+            if (start == null) continue;
+            if (end == null) end = start.plusHours(1);
             Map<String, Object> sessionData = new HashMap<>(s);
                 sessionData.put("task_name", getTaskName(s));
                 sessionData.put("tag_name", getTagName(s));
@@ -278,17 +287,6 @@ public class WeeklyTab extends VBox {
         }
     }
 
-    private List<Map<String, Object>> loadWeekDeadlines() {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String startRange = currentWeekStart.atStartOfDay().format(fmt);
-        String endRange = currentWeekStart.plusDays(6).atTime(23, 59, 59).format(fmt);
-        try {
-            return ApiClient.getDeadlines(startRange, endRange);
-        } catch (Exception e) {
-            return new ArrayList<>();
-        }
-    }
-
     private void updateAllDaySectionHeight(List<Map<String, Object>> deadlines) {
         int maxPerDay = 0;
         for (int i = 0; i < 7; i++) {
@@ -345,6 +343,7 @@ public class WeeklyTab extends VBox {
     private HBox createDeadlinePill(Map<String, Object> deadline, boolean allDay, LocalDateTime date) {
         String title = String.valueOf(deadline.getOrDefault("title", deadline.getOrDefault("task_name", deadline.getOrDefault("taskName", "Deadline"))));
         String urgency = String.valueOf(deadline.getOrDefault("urgency", "Medium"));
+        boolean isCompleted = isDeadlineCompleted(deadline);
         HBox pill = new HBox(8);
         pill.setAlignment(Pos.CENTER_LEFT);
         pill.getStyleClass().add("calendar-deadline-pill");
@@ -357,19 +356,32 @@ public class WeeklyTab extends VBox {
 
         VBox content = new VBox(2);
         content.getStyleClass().add("calendar-deadline-content");
+        content.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(content, Priority.ALWAYS);
 
         HBox titleRow = new HBox(6);
         titleRow.setAlignment(Pos.CENTER_LEFT);
+        titleRow.setMaxWidth(Double.MAX_VALUE);
         Label label = new Label(title);
         label.getStyleClass().add("calendar-deadline-title");
+        label.setOpacity(isCompleted ? 0.7 : 1.0);
+        label.setMaxWidth(Double.MAX_VALUE);
+        label.setTextOverrun(OverrunStyle.ELLIPSIS);
+        HBox.setHgrow(label, Priority.ALWAYS);
         titleRow.getChildren().addAll(label);
 
         Label meta = new Label(allDay ? "All day • " + urgency : date.format(timeFormatter) + " • " + urgency);
         meta.getStyleClass().add("calendar-deadline-meta");
-        content.getChildren().addAll(titleRow);
+        meta.setMaxWidth(Double.MAX_VALUE);
+        meta.setTextOverrun(OverrunStyle.ELLIPSIS);
+        meta.setOpacity(isCompleted ? 0.7 : 1.0);
+        content.getChildren().addAll(titleRow, meta);
+
 
         pill.getChildren().addAll(icon, colorBar, content);
+        pill.setMinWidth(0);
         Tooltip.install(pill, new Tooltip(buildDeadlineTooltip(deadline, allDay, date)));
+        if (isCompleted) pill.setOpacity(0.5);
         pill.setOnMouseClicked(e -> {
             showDeadlinePopup(deadline, e.getScreenX(), e.getScreenY());
             e.consume();
@@ -385,16 +397,7 @@ public class WeeklyTab extends VBox {
     }
 
     private LocalDateTime parseDateTime(Map<String, Object> item) {
-        Object raw = item.getOrDefault("dueDate", item.getOrDefault("deadline", item.get("start_time")));
-        if (raw == null) return null;
-        String value = raw.toString();
-        try {
-            return value.contains("T")
-                    ? LocalDateTime.parse(value)
-                    : LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        } catch (Exception e) {
-            return null;
-        }
+        return ApiClient.parseApiTimestamp(item.getOrDefault("dueDate", item.getOrDefault("deadline", item.get("start_time"))));
     }
 
     private boolean overlapsWithGroup(Map<String, Object> s, List<Map<String, Object>> group) {
@@ -557,7 +560,7 @@ public class WeeklyTab extends VBox {
         return m.substring(0, 1).toUpperCase() + m.substring(1) + " " + currentWeekStart.getYear();
     }
 
-    public void setCurrentWeekStart(LocalDate date) { this.currentWeekStart = date.with(DayOfWeek.MONDAY); refresh(); }
+    public void setCurrentWeekStart(LocalDate date) { this.currentWeekStart = date.with(DayOfWeek.MONDAY); }
 
     private void showPopup(Map<String, Object> s, LocalDate d, double sx, double sy, int h, int m, boolean isClick) {
 
@@ -633,8 +636,8 @@ public class WeeklyTab extends VBox {
         DatePicker dpStart = new DatePicker(startDate);
         dpStart.setMaxWidth(Double.MAX_VALUE);
 
-        TextField hs = createTimeField(startH, 23);
-        TextField ms = createTimeField(startM, 59);
+        TextField hs = PlannerHelpers.createTimeField(startH, 23);
+        TextField ms = PlannerHelpers.createTimeField(startM, 59);
 
         HBox sRow = new HBox(10, dpStart, new HBox(3, hs, new Label(":"), ms));
         sRow.setAlignment(Pos.CENTER_LEFT);
@@ -642,8 +645,8 @@ public class WeeklyTab extends VBox {
         DatePicker dpEnd = new DatePicker(endDate);
         dpEnd.setMaxWidth(Double.MAX_VALUE);
 
-        TextField he = createTimeField(endH, 23);
-        TextField me = createTimeField(endM, 59);
+        TextField he = PlannerHelpers.createTimeField(endH, 23);
+        TextField me = PlannerHelpers.createTimeField(endM, 59);
 
         HBox eRow = new HBox(10, dpEnd, new HBox(3, he, new Label(":"), me));
         eRow.setAlignment(Pos.CENTER_LEFT);
@@ -651,58 +654,14 @@ public class WeeklyTab extends VBox {
         // tags + tasks
         ComboBox<String> cTags = new ComboBox<>();
         ComboBox<String> cTasks = new ComboBox<>();
-
         cTags.setMaxWidth(Double.MAX_VALUE);
         cTasks.setMaxWidth(Double.MAX_VALUE);
 
-        Map<String, List<String>> tagMap = new LinkedHashMap<>();
-
-        try {
-            ApiClient.getTags().forEach(t -> {
-                String name = (String) t.get("name");
-
-                try {
-                    List<String> tasks = ApiClient.getTasksByTag(name)
-                            .stream()
-                            .map(tk -> (String) tk.get("name"))
-                            .collect(Collectors.toList());
-
-                    tagMap.put(name, tasks);
-
-                } catch (Exception ex) {
-                    tagMap.put(name, new ArrayList<>());
-                }
-            });
-        } catch (Exception ignored) {}
-
-        cTags.getItems().addAll(tagMap.keySet());
-
-        cTags.setOnAction(_ -> {
-            cTasks.getItems().clear();
-
-            if (tagMap.containsKey(cTags.getValue())) {
-                cTasks.getItems().addAll(tagMap.get(cTags.getValue()));
-            }
-        });
-
-        if (s != null) {
-            String initialTask = (String) s.get("task_name");
-
-            tagMap.entrySet()
-                    .stream()
-                    .filter(e -> e.getValue().contains(initialTask))
-                    .findFirst()
-                    .ifPresent(e -> {
-                        cTags.getSelectionModel().select(e.getKey());
-                        cTasks.getItems().addAll(e.getValue());
-                        cTasks.getSelectionModel().select(initialTask);
-                    });
-        }
-
-        // boton save
+        String initialTask = s != null ? String.valueOf(s.getOrDefault("task_name", "")) : "";
         Button btnS = new Button(s == null ? "Save" : "Update");
         btnS.getStyleClass().add("button-primary");
         btnS.setMaxWidth(Double.MAX_VALUE);
+        configureTagSelectorsAsync(cTags, cTasks, initialTask, btnS);
 
         btnS.setOnAction(_ -> {
 
@@ -713,10 +672,10 @@ public class WeeklyTab extends VBox {
                     cTasks.getValue() == null) return;
 
             LocalDateTime fS = dpStart.getValue()
-                    .atTime(Integer.parseInt(hs.getText()), Integer.parseInt(ms.getText()));
+                    .atTime(PlannerHelpers.parseInt(hs.getText()), PlannerHelpers.parseInt(ms.getText()));
 
             LocalDateTime fE = dpEnd.getValue()
-                    .atTime(Integer.parseInt(he.getText()), Integer.parseInt(me.getText()));
+                    .atTime(PlannerHelpers.parseInt(he.getText()), PlannerHelpers.parseInt(me.getText()));
 
             try {
                 if (s == null) {
@@ -724,8 +683,8 @@ public class WeeklyTab extends VBox {
                             cTags.getValue(),
                             cTasks.getValue(),
                             txtT.getText().trim(),
-                            fS.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                            fE.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                            ApiClient.formatApiTimestamp(fS),
+                            ApiClient.formatApiTimestamp(fE)
                     );
                 } else {
                     ApiClient.updateScheduledSession(
@@ -733,14 +692,17 @@ public class WeeklyTab extends VBox {
                             cTags.getValue(),
                             cTasks.getValue(),
                             txtT.getText().trim(),
-                            fS.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                            fE.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                            ApiClient.formatApiTimestamp(fS),
+                            ApiClient.formatApiTimestamp(fE)
                     );
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception error) {
+                error.printStackTrace();
+                return;
+            }
 
             popup.hide();
-            refreshAction.run();
+            refreshPlannerAndMenu();
         });
 
         root.getChildren().addAll(
@@ -762,10 +724,13 @@ public class WeeklyTab extends VBox {
             btnD.setOnAction(_ -> {
                 try {
                     ApiClient.deleteScheduledSession((int) s.get("id"));
-                } catch (Exception ignored) {}
+                } catch (Exception error) {
+                    error.printStackTrace();
+                    return;
+                }
 
                 popup.hide();
-                refreshAction.run();
+                refreshPlannerAndMenu();
             });
 
             root.getChildren().add(btnD);
@@ -815,45 +780,36 @@ public class WeeklyTab extends VBox {
         if (due == null) due = currentWeekStart.atStartOfDay();
 
         DatePicker duePicker = new DatePicker(due.toLocalDate());
-        TextField hourField = createTimeField(String.format("%02d", due.getHour()), 23);
-        TextField minuteField = createTimeField(String.format("%02d", due.getMinute()), 59);
+        TextField hourField = PlannerHelpers.createTimeField(String.format("%02d", due.getHour()), 23);
+        TextField minuteField = PlannerHelpers.createTimeField(String.format("%02d", due.getMinute()), 59);
         HBox dueRow = new HBox(10, duePicker, new HBox(3, hourField, new Label(":"), minuteField));
         dueRow.setAlignment(Pos.CENTER_LEFT);
 
         CheckBox allDayBox = new CheckBox("All day");
         allDayBox.setSelected(Boolean.TRUE.equals(deadline.get("allDay")));
-        toggleTimeFields(hourField, minuteField, allDayBox.isSelected());
-        allDayBox.selectedProperty().addListener((_, _, selected) -> toggleTimeFields(hourField, minuteField, selected));
+        PlannerHelpers.toggleTimeFields(hourField, minuteField, allDayBox.isSelected());
+        allDayBox.selectedProperty().addListener((_, _, selected) -> PlannerHelpers.toggleTimeFields(hourField, minuteField, selected));
 
         ComboBox<String> urgencyBox = new ComboBox<>();
         urgencyBox.getItems().addAll("High", "Medium", "Low");
         urgencyBox.setValue(String.valueOf(deadline.getOrDefault("urgency", "Medium")));
         urgencyBox.setMaxWidth(Double.MAX_VALUE);
 
+        Button saveButton = new Button(isEdit ? "Update" : "Save");
+        saveButton.getStyleClass().add("button-primary");
+        saveButton.setMaxWidth(Double.MAX_VALUE);
         ComboBox<String> tagBox = new ComboBox<>();
         ComboBox<String> taskBox = new ComboBox<>();
         tagBox.setMaxWidth(Double.MAX_VALUE);
         taskBox.setMaxWidth(Double.MAX_VALUE);
-
-        TagSelectionData tagData = loadTagData();
-        Map<String, List<String>> tagMap = tagData.tagMap();
-        tagBox.getItems().addAll(tagMap.keySet());
-        tagBox.setOnAction(_ -> {
-            taskBox.getItems().setAll(tagMap.getOrDefault(tagBox.getValue(), List.of()));
-            if (!taskBox.getItems().isEmpty()) taskBox.getSelectionModel().selectFirst();
-        });
-
         String initialTask = String.valueOf(deadline.getOrDefault("task_name", deadline.getOrDefault("taskName", "")));
-        preselectTask(tagMap, tagBox, taskBox, initialTask);
-
-        Button saveButton = new Button(isEdit ? "Update" : "Save");
-        saveButton.getStyleClass().add("button-primary");
-        saveButton.setMaxWidth(Double.MAX_VALUE);
+        configureTagSelectorsAsync(tagBox, taskBox, initialTask, saveButton);
         saveButton.setOnAction(_ -> {
             if (duePicker.getValue() == null || taskBox.getValue() == null || urgencyBox.getValue() == null) return;
-            int hour = allDayBox.isSelected() ? 0 : parseInt(hourField.getText());
-            int minute = allDayBox.isSelected() ? 0 : parseInt(minuteField.getText());
+            int hour = allDayBox.isSelected() ? 0 : PlannerHelpers.parseInt(hourField.getText());
+            int minute = allDayBox.isSelected() ? 0 : PlannerHelpers.parseInt(minuteField.getText());
             LocalDateTime newDue = duePicker.getValue().atTime(hour, minute);
+            PlannerHelpers.TagSelectionData tagData = cachedTagData != null ? cachedTagData : new PlannerHelpers.TagSelectionData(Map.of(), Map.of());
 
             try {
                 if (isEdit) {
@@ -865,44 +821,28 @@ public class WeeklyTab extends VBox {
                             titleField.getText().trim(),
                             descriptionArea.getText().trim(),
                             urgencyBox.getValue(),
-                            newDue.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                            allDayBox.isSelected()
+                            ApiClient.formatApiTimestamp(newDue),
+                            allDayBox.isSelected(),
+                            isDeadlineCompleted(deadline)
                     );
                 } else {
                     ApiClient.saveDeadline(
                             tagBox.getValue(),
                             tagData.tagColors().getOrDefault(tagBox.getValue(), ""),
-                            taskBox.getValue(),
-                            titleField.getText().trim(),
-                            descriptionArea.getText().trim(),
-                            urgencyBox.getValue(),
-                            newDue.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                            allDayBox.isSelected()
+                                taskBox.getValue(),
+                                titleField.getText().trim(),
+                                descriptionArea.getText().trim(),
+                                urgencyBox.getValue(),
+                                ApiClient.formatApiTimestamp(newDue),
+                                allDayBox.isSelected(),
+                                false
                     );
                 }
-            } catch (Exception updateError) {
-                if (!isEdit) {
-                    popup.hide();
-                    refreshAction.run();
-                    return;
-                }
-                try {
-                    ApiClient.deleteDeadline(((Number) deadline.get("id")).longValue());
-                    ApiClient.saveDeadline(
-                            tagBox.getValue(),
-                            tagData.tagColors().getOrDefault(tagBox.getValue(), ""),
-                            taskBox.getValue(),
-                            titleField.getText().trim(),
-                            descriptionArea.getText().trim(),
-                            urgencyBox.getValue(),
-                            newDue.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                            allDayBox.isSelected()
-                    );
-                } catch (Exception ignored) {}
+                popup.hide();
+                refreshPlannerAndMenu();
+            } catch (Exception error) {
+                error.printStackTrace();
             }
-
-            popup.hide();
-            refreshAction.run();
         });
 
         root.getChildren().addAll(
@@ -924,10 +864,13 @@ public class WeeklyTab extends VBox {
             deleteButton.setOnAction(_ -> {
                 try {
                     ApiClient.deleteDeadline(((Number) deadline.get("id")).longValue());
-                } catch (Exception ignored) {}
+                } catch (Exception error) {
+                    error.printStackTrace();
+                    return;
+                }
 
                 popup.hide();
-                refreshAction.run();
+                refreshPlannerAndMenu();
             });
             root.getChildren().add(deleteButton);
         }
@@ -941,94 +884,66 @@ public class WeeklyTab extends VBox {
         popup.show(this.getScene().getWindow(), sx, sy);
     }
 
-    private TagSelectionData loadTagData() {
-        Map<String, List<String>> tagMap = new LinkedHashMap<>();
-        Map<String, String> tagColors = new LinkedHashMap<>();
-        try {
-            ApiClient.getTags().forEach(tag -> {
-                String name = String.valueOf(tag.get("name"));
-                tagColors.put(name, String.valueOf(tag.getOrDefault("color", "")));
-                try {
-                    List<String> tasks = ApiClient.getTasksByTag(name)
-                            .stream()
-                            .map(task -> String.valueOf(task.get("name")))
-                            .collect(Collectors.toList());
-                    tagMap.put(name, tasks);
-                } catch (Exception ex) {
-                    tagMap.put(name, new ArrayList<>());
-                }
-            });
-        } catch (Exception ignored) {}
-        return new TagSelectionData(tagMap, tagColors);
+    private void configureTagSelectorsAsync(ComboBox<String> tagBox, ComboBox<String> taskBox, String initialTask, Button saveButton) {
+        tagBox.setDisable(true);
+        taskBox.setDisable(true);
+        saveButton.setDisable(true);
+        tagBox.setPromptText("Loading tags...");
+        taskBox.setPromptText("Loading tasks...");
+
+        PlannerHelpers.TagSelectionData cached = cachedTagData;
+        if (cached != null && !cached.tagMap().isEmpty()) {
+            applyTagData(tagBox, taskBox, initialTask, saveButton, cached);
+            return;
+        }
+
+        new Thread(() -> {
+            PlannerHelpers.TagSelectionData loaded = PlannerHelpers.loadTagData();
+            if (!loaded.tagMap().isEmpty()) {
+                cachedTagData = loaded;
+            }
+            Platform.runLater(() -> applyTagData(tagBox, taskBox, initialTask, saveButton, loaded));
+        }, "weekly-popup-tag-load").start();
     }
 
-    private void preselectTask(Map<String, List<String>> tagMap, ComboBox<String> tagBox, ComboBox<String> taskBox, String taskName) {
-        tagMap.entrySet().stream()
-                .filter(entry -> entry.getValue().contains(taskName))
-                .findFirst()
-                .ifPresent(entry -> {
-                    tagBox.getSelectionModel().select(entry.getKey());
-                    taskBox.getItems().setAll(entry.getValue());
-                    taskBox.getSelectionModel().select(taskName);
-                });
-
-        if (tagBox.getValue() == null && !tagBox.getItems().isEmpty()) {
-            tagBox.getSelectionModel().selectFirst();
+    private void applyTagData(ComboBox<String> tagBox, ComboBox<String> taskBox, String initialTask, Button saveButton, PlannerHelpers.TagSelectionData tagData) {
+        Map<String, List<String>> tagMap = tagData.tagMap();
+        tagBox.getItems().setAll(tagMap.keySet());
+        tagBox.setOnAction(_ -> {
             taskBox.getItems().setAll(tagMap.getOrDefault(tagBox.getValue(), List.of()));
             if (!taskBox.getItems().isEmpty()) taskBox.getSelectionModel().selectFirst();
-        }
-    }
-
-    private TextField createTimeField(String initial, int max) {
-        TextField tf = new TextField(initial); tf.setPrefWidth(65); tf.setAlignment(Pos.CENTER);
-        tf.textProperty().addListener((_, _, nV) -> {
-            if (!nV.matches("\\d*")) tf.setText(nV.replaceAll("\\D", ""));
-            if (tf.getText().length() > 2) tf.setText(tf.getText().substring(0, 2));
-            if (!tf.getText().isEmpty()) { int val = Integer.parseInt(tf.getText()); if (val > max) tf.setText(String.valueOf(max)); }
         });
-        return tf;
+        PlannerHelpers.preselectTask(tagMap, tagBox, taskBox, initialTask);
+        tagBox.setDisable(tagMap.isEmpty());
+        taskBox.setDisable(tagMap.isEmpty());
+        saveButton.setDisable(tagMap.isEmpty());
+        tagBox.setPromptText(tagMap.isEmpty() ? "No tags available" : null);
+        taskBox.setPromptText(tagMap.isEmpty() ? "No tasks available" : null);
     }
 
-    private void toggleTimeFields(TextField hourField, TextField minuteField, boolean disabled) {
-        hourField.setDisable(disabled);
-        minuteField.setDisable(disabled);
+    private LocalDateTime parseDateValue(Object value) {
+        return ApiClient.parseApiTimestamp(value);
     }
 
-    private int parseInt(String value) {
-        if (value == null || value.isBlank()) return 0;
-        return Integer.parseInt(value);
+    private boolean isDeadlineCompleted(Map<String, Object> deadline) {
+        return ApiClient.extractCompletedFlag(deadline);
     }
 
-    private record TagSelectionData(Map<String, List<String>> tagMap, Map<String, String> tagColors) {}
-
-    private void updateSessionTime(Map<String, Object> s, int newHour, int newMinute) {
-        LocalDateTime oldStart = (LocalDateTime) s.get("full_start");
-        LocalDateTime oldEnd = (LocalDateTime) s.get("full_end");
-
-        long durationMinutes = java.time.Duration.between(oldStart, oldEnd).toMinutes();
-
-        LocalDateTime newStart = oldStart.withHour(newHour).withMinute(newMinute).withSecond(0);
-        LocalDateTime newEnd = newStart.plusMinutes(durationMinutes);
-
-        DateTimeFormatter dbFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-        try {
-            ApiClient.updateScheduledSession(
-                    (int) s.get("id"),
-                    (String) s.get("tag_name"),
-                    (String) s.get("task_name"),
-                    (String) s.getOrDefault("title", ""),
-                    newStart.format(dbFmt),
-                    newEnd.format(dbFmt)
-            );
-            refreshAction.run();
-        } catch (Exception e) {
-            refreshAction.run();
-        }
+    private void refreshPlannerAndMenu() {
+        refreshAction.run();
     }
 
-    private String getStartTime(Map<String, Object> s) { return s.get("startTime") != null ? s.get("startTime").toString() : null; }
-    private String getEndTime(Map<String, Object> s) { return s.get("endTime") != null ? s.get("endTime").toString() : null; }
+    private String getStartTime(Map<String, Object> s) {
+        Object value = s.get("startDate");
+        if (value == null) value = s.get("startTime");
+        return value != null ? value.toString() : null;
+    }
+
+    private String getEndTime(Map<String, Object> s) {
+        Object value = s.get("endDate");
+        if (value == null) value = s.get("endTime");
+        return value != null ? value.toString() : null;
+    }
     private String getTaskName(Map<String, Object> s) { Map<?, ?> t = (Map<?, ?>) s.get("task"); return t != null ? (String) t.get("name") : ""; }
     private String getTagName(Map<String, Object> s) { Map<?, ?> t = (Map<?, ?>) s.get("task"); if (t == null) return ""; Map<?, ?> tg = (Map<?, ?>) t.get("tag"); return tg != null ? (String) tg.get("name") : ""; }
     private String getTagColor(Map<String, Object> s) { Map<?, ?> t = (Map<?, ?>) s.get("task"); if (t == null) return "#94a3b8"; Map<?, ?> tg = (Map<?, ?>) t.get("tag"); return tg != null ? (String) tg.get("color") : "#94a3b8"; }

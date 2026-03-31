@@ -2,11 +2,11 @@ package com.frandm.studytracker.backend.controller;
 
 import com.frandm.studytracker.backend.model.Session;
 import com.frandm.studytracker.backend.service.SessionService;
+import com.frandm.studytracker.backend.util.DateTimeUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -22,17 +22,22 @@ public class SessionController {
     }
 
     @GetMapping
-    public Page<Session> getFiltered(
+    public List<Session> list(
             @RequestParam(required = false) String tag,
             @RequestParam(required = false) String task,
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return sessionService.getFiltered(tag, task, page, size);
-    }
 
-    @GetMapping("/all")
-    public List<Session> getAll() {
-        return sessionService.getAll();
+        if (start != null && end != null) {
+            return sessionService.getByDateRange(
+                    DateTimeUtils.parseFlexibleTimestamp(start),
+                    DateTimeUtils.parseFlexibleTimestamp(end)
+            );
+        }
+
+        return sessionService.getFiltered(tag, task, page, size).getContent();
     }
 
     @GetMapping("/range")
@@ -40,14 +45,18 @@ public class SessionController {
             @RequestParam String start,
             @RequestParam String end) {
         return sessionService.getByDateRange(
-                LocalDateTime.parse(start),
-                LocalDateTime.parse(end)
+                DateTimeUtils.parseFlexibleTimestamp(start),
+                DateTimeUtils.parseFlexibleTimestamp(end)
         );
     }
 
+    @GetMapping("/{id}")
+    public Session get(@PathVariable Long id) {
+        return sessionService.getById(id);
+    }
+
     @PostMapping
-    public Session save(@RequestBody Map<String, Object> body) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public Session create(@RequestBody Map<String, Object> body) {
         return sessionService.save(
                 (String) body.get("tagName"),
                 (String) body.get("tagColor"),
@@ -55,17 +64,32 @@ public class SessionController {
                 (String) body.get("title"),
                 (String) body.get("description"),
                 (Integer) body.get("totalMinutes"),
-                LocalDateTime.parse((String) body.get("startDate"), fmt),
-                LocalDateTime.parse((String) body.get("endDate"), fmt),
+                DateTimeUtils.parseApiTimestamp((String) body.get("startDate")),
+                DateTimeUtils.parseApiTimestamp((String) body.get("endDate")),
                 (Integer) body.get("rating")
         );
     }
 
     @PutMapping("/{id}")
     public Session update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        return sessionService.update(
+        return sessionService.fullUpdate(
                 id,
-                body.get("taskId") != null ? Long.valueOf(body.get("taskId").toString()) : null,
+                (String) body.get("tagName"),
+                (String) body.get("tagColor"),
+                (String) body.get("taskName"),
+                (String) body.get("title"),
+                (String) body.get("description"),
+                (Integer) body.get("totalMinutes"),
+                DateTimeUtils.parseApiTimestamp((String) body.get("startDate")),
+                DateTimeUtils.parseApiTimestamp((String) body.get("endDate")),
+                (Integer) body.get("rating")
+        );
+    }
+
+    @PatchMapping("/{id}")
+    public Session patch(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return sessionService.partialUpdate(
+                id,
                 (String) body.get("title"),
                 (String) body.get("description"),
                 (Integer) body.get("rating")

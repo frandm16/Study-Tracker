@@ -8,6 +8,8 @@ import java.util.Optional;
 
 @Repository
 public interface TagRepository extends JpaRepository<Tag, Long> {
+    List<Tag> findAllByOrderByNameAsc();
     List<Tag> findByIsArchivedFalseOrderByNameAsc();
+    List<Tag> findByIsArchivedFalseAndIsFavoriteTrueOrderByNameAsc();
     Optional<Tag> findByName(String name);
 }

@@ -2,10 +2,10 @@ package com.frandm.studytracker.backend.controller;
 
 import com.frandm.studytracker.backend.model.ScheduledSession;
 import com.frandm.studytracker.backend.service.ScheduledSessionService;
+import com.frandm.studytracker.backend.util.DateTimeUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -20,56 +20,62 @@ public class ScheduledSessionController {
         this.scheduledSessionService = scheduledSessionService;
     }
 
-    @GetMapping("/all")
-    public List<ScheduledSession> getAll() {
-        return scheduledSessionService.getAll();
-    }
-
     @GetMapping
-    public List<ScheduledSession> getByRange(
-            @RequestParam String start,
-            @RequestParam String end) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public List<ScheduledSession> list(
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end) {
+
+        if (start == null || end == null || start.isEmpty() || end.isEmpty()) {
+            return scheduledSessionService.getAll();
+        }
+
         return scheduledSessionService.getByDateRange(
-                LocalDateTime.parse(start, fmt),
-                LocalDateTime.parse(end, fmt)
+                DateTimeUtils.parseFlexibleTimestamp(start),
+                DateTimeUtils.parseFlexibleTimestamp(end)
         );
     }
 
+    @GetMapping("/{id}")
+    public ScheduledSession get(@PathVariable Long id) {
+        return scheduledSessionService.getById(id);
+    }
+
     @PostMapping
-    public ScheduledSession save(@RequestBody Map<String, Object> body) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public ScheduledSession create(@RequestBody Map<String, Object> body) {
         return scheduledSessionService.save(
                 (String) body.get("tagName"),
                 (String) body.get("taskName"),
                 (String) body.get("title"),
-                LocalDateTime.parse((String) body.get("startTime"), fmt),
-                LocalDateTime.parse((String) body.get("endTime"), fmt)
+                DateTimeUtils.parseApiTimestamp((String) body.get("startDate")),
+                DateTimeUtils.parseApiTimestamp((String) body.get("endDate"))
         );
     }
 
     @PutMapping("/{id}")
     public ScheduledSession update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return scheduledSessionService.update(
+        return scheduledSessionService.fullUpdate(
                 id,
                 (String) body.get("tagName"),
                 (String) body.get("taskName"),
                 (String) body.get("title"),
-                LocalDateTime.parse((String) body.get("startTime"), fmt),
-                LocalDateTime.parse((String) body.get("endTime"), fmt)
+                DateTimeUtils.parseApiTimestamp((String) body.get("startDate")),
+                DateTimeUtils.parseApiTimestamp((String) body.get("endDate"))
+        );
+    }
+
+    @PatchMapping("/{id}")
+    public ScheduledSession patch(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return scheduledSessionService.partialUpdate(
+                id,
+                (String) body.get("title"),
+                DateTimeUtils.parseApiTimestamp((String) body.get("startDate")),
+                DateTimeUtils.parseApiTimestamp((String) body.get("endDate"))
         );
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         scheduledSessionService.delete(id);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/{id}/complete")
-    public ResponseEntity<Void> markCompleted(@PathVariable Long id) {
-        scheduledSessionService.markCompleted(id);
         return ResponseEntity.ok().build();
     }
 }

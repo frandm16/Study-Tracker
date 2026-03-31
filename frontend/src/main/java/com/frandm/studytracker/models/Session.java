@@ -1,7 +1,7 @@
 package com.frandm.studytracker.models;
 
+import com.frandm.studytracker.client.ApiClient;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public class Session {
     private final int id;
@@ -15,8 +15,6 @@ public class Session {
     private final String endDate;
     private int rating;
     private boolean isFavorite;
-
-    private static final DateTimeFormatter DB_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public Session(int id, String tag, String tagColor, String task, String title,
                    String description, int totalMinutes, String startDate, String endDate) {
@@ -50,28 +48,10 @@ public class Session {
     public void setFavorite(boolean favorite) { isFavorite = favorite; }
 
     public LocalDateTime getStartDateTime() {
-        if (startDate == null) return null;
-        try {
-            return LocalDateTime.parse(startDate.replace(" ", "T"));
-        } catch (Exception e) {
-            try {
-                return LocalDateTime.parse(startDate, DB_FORMATTER);
-            } catch (Exception e2) {
-                return null;
-            }
-        }
+        return ApiClient.parseApiTimestamp(startDate);
     }
 
     public LocalDateTime getEndDateTime() {
-        if (endDate == null) return null;
-        try {
-            return LocalDateTime.parse(endDate.replace(" ", "T"));
-        } catch (Exception e) {
-            try {
-                return LocalDateTime.parse(endDate, DB_FORMATTER);
-            } catch (Exception e2) {
-                return null;
-            }
-        }
+        return ApiClient.parseApiTimestamp(endDate);
     }
 }

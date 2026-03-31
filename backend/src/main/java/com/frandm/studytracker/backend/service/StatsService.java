@@ -3,10 +3,10 @@ package com.frandm.studytracker.backend.service;
 import com.frandm.studytracker.backend.model.Session;
 import com.frandm.studytracker.backend.repository.SessionRepository;
 import com.frandm.studytracker.backend.repository.TaskRepository;
+import com.frandm.studytracker.backend.util.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +47,6 @@ public class StatsService {
     }
 
     public List<Map<String, Object>> getAllSessionsForStats() {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return sessionRepository.findAll().stream().map(s -> {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("id", s.getId());
@@ -57,10 +56,9 @@ public class StatsService {
             map.put("title", s.getTitle());
             map.put("description", s.getDescription());
             map.put("totalMinutes", s.getTotalMinutes());
-            map.put("startDate", s.getStartDate().format(fmt));
-            map.put("endDate", s.getEndDate() != null ? s.getEndDate().format(fmt) : null);
+            map.put("startDate", DateTimeUtils.formatApiTimestamp(s.getStartDate()));
+            map.put("endDate", s.getEndDate() != null ? DateTimeUtils.formatApiTimestamp(s.getEndDate()) : null);
             map.put("rating", s.getRating());
-            map.put("isFavorite", s.getIsFavorite());
             return map;
         }).collect(Collectors.toList());
     }

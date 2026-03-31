@@ -15,7 +15,20 @@ public class TagService {
     }
 
     public List<Tag> getAll() {
+        return tagRepository.findAllByOrderByNameAsc();
+    }
+
+    public List<Tag> getActive() {
         return tagRepository.findByIsArchivedFalseOrderByNameAsc();
+    }
+
+    public List<Tag> getFavorites() {
+        return tagRepository.findByIsArchivedFalseAndIsFavoriteTrueOrderByNameAsc();
+    }
+
+    public Tag getById(Long id) {
+        return tagRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tag not found: " + id));
     }
 
     public Tag getOrCreate(String name, String color) {
@@ -27,22 +40,25 @@ public class TagService {
         });
     }
 
-    public Tag update(Long id, String color, Integer weeklyGoalMin) {
+    public Tag fullUpdate(Long id, String name, String color) {
         Tag tag = tagRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tag not found"));
-        if (color != null) tag.setColor(color);
-        if (weeklyGoalMin != null) tag.setWeeklyGoalMin(weeklyGoalMin);
+                .orElseThrow(() -> new RuntimeException("Tag not found: " + id));
+        tag.setName(name);
+        tag.setColor(color);
         return tagRepository.save(tag);
     }
 
-    public void delete(String name) {
-        tagRepository.findByName(name).ifPresent(tagRepository::delete);
+    public Tag partialUpdate(Long id, String name, String color, Boolean isArchived, Boolean isFavorite) {
+        Tag tag = tagRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tag not found: " + id));
+        if (name != null) tag.setName(name);
+        if (color != null) tag.setColor(color);
+        if (isArchived != null) tag.setArchived(isArchived);
+        if (isFavorite != null) tag.setFavorite(isFavorite);
+        return tagRepository.save(tag);
     }
 
-    public void setArchived(String name, boolean archived) {
-        tagRepository.findByName(name).ifPresent(tag -> {
-            tag.setIsArchived(archived);
-            tagRepository.save(tag);
-        });
+    public void delete(Long id) {
+        tagRepository.deleteById(id);
     }
 }
