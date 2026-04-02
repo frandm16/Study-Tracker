@@ -37,6 +37,7 @@ cmake-build-*/
 *.log
 .env
 .env.local
+*.mp4
 
 Thumbs.db
 desktop.ini

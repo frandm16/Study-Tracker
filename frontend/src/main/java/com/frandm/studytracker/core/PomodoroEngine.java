@@ -50,7 +50,7 @@ public class PomodoroEngine {
     private String notificationSoundWarning = "";
     private String notificationSoundInfo = "";
     private String customAlarmSoundPath = "";
-    private String selectedAlarmPreset = "BIRDS";
+    private String selectedAlarmPreset = "BELLS";
 
     private Runnable onTick;
     private Runnable onStateChange;
@@ -229,7 +229,7 @@ public class PomodoroEngine {
         this.notificationSoundWarning = "";
         this.notificationSoundInfo = "";
         this.customAlarmSoundPath = "";
-        this.selectedAlarmPreset = "BIRDS";
+        this.selectedAlarmPreset = "BELLS";
     }
     //endregion
 

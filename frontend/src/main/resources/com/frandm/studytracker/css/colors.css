@@ -57,8 +57,8 @@
     -stage-icon: #ffffff;
     -stage-hover-bg: rgba(255, 255, 255, 0.1);
 
-    -bg-dashboard: rgb(23, 38, 64, 0.85);
-    -fg-dashboard: rgba(22, 27, 34, 0.7);
+    -bg-dashboard: rgba(23, 38, 64, 0.8);
+    -fg-dashboard: rgb(35, 50, 66, 0.9);
 }
 
 .primer-light {
@@ -103,8 +103,8 @@
     -stage-icon: #000000;
     -stage-hover-bg: rgba(0, 0, 0, 0.1);
 
-    -bg-dashboard: rgb(253, 240, 243, 0.85);
-    -fg-dashboard: rgba(228, 163, 179, 0.3);
+    -bg-dashboard: rgba(248, 236, 238, 0.8);
+    -fg-dashboard: rgb(243, 228, 236, 0.9);
 }
 
 .primer-electric-blue {

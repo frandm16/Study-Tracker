@@ -17,7 +17,7 @@ public class SoundManager {
     public enum SoundCategory { MASTER, ALARM, NOTIFICATION, MUSIC }
 
     public enum SoundType {
-        ALARM("/com/frandm/studytracker/sounds/alarm/birds.mp3", SoundCategory.ALARM),
+        ALARM("/com/frandm/studytracker/sounds/alarm/bells.mp3", SoundCategory.ALARM),
         NOTIFICATION("/com/frandm/studytracker/sounds/notification/notification.mp3", SoundCategory.NOTIFICATION),
         BACKGROUND_MUSIC("/com/frandm/studytracker/sounds/background/lofi1.mp3", SoundCategory.MUSIC);
 
@@ -34,10 +34,9 @@ public class SoundManager {
     }
 
     public enum AlarmSound {
-        BIRDS("Birds", "/com/frandm/studytracker/sounds/alarm/birds.mp3"),
         BELLS("Bells", "/com/frandm/studytracker/sounds/alarm/bells.mp3"),
         DIGITAL("Digital", "/com/frandm/studytracker/sounds/alarm/digital.mp3"),
-        KITCHEN("Kitchen", "/com/frandm/studytracker/sounds/alarm/kitchen.mp3");
+        BIRDS("Birds", "/com/frandm/studytracker/sounds/alarm/birds.mp3");
 
         private final String displayName;
         private final String path;
