@@ -1,3 +1,4 @@
+![Timer](frontend/src/main/resources/com/frandm/studytracker/images/study-zen-banner.png)
 # 🎓 Study Tracker
 
 > **⚠️ Work in Progress:** This project is currently under active development. Some features may be incomplete or subject to significant changes.

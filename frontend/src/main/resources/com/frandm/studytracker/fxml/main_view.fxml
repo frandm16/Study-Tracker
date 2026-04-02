@@ -2,6 +2,8 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.media.MediaView?>
 <?import javafx.scene.shape.Circle?>
@@ -536,10 +538,12 @@
                         <VBox spacing="16" style="-fx-padding: 22 25 22 25;" alignment="TOP_CENTER">
 
                             <VBox spacing="14" styleClass="settings-card" alignment="CENTER">
-                                <FontIcon iconLiteral="mdi2t-timer-outline" styleClass="settings-about-icon"/>
-                                <Label text="Study Tracker" styleClass="settings-about-title"/>
-                                <Label fx:id="appVersionLabel" text="v1.0.0" styleClass="settings-about-version"/>
-                                <Label text="A Study tracker with session tracking, planning, and analytics."
+                                <ImageView fitHeight="80" fitWidth="80" preserveRatio="true">
+                                    <Image url="@/com/frandm/studytracker/images/SZlogo.png"/>
+                                </ImageView>
+                                <Label text="StudyZen" styleClass="settings-about-title"/>
+                                <Label fx:id="appVersionLabel" text="v1.3.0" styleClass="settings-about-version"/>
+                                <Label text="Plan your weeks, track your focus sessions and visualize your progress to build consistent study habits."
                                        wrapText="true" textAlignment="CENTER" styleClass="settings-about-desc"/>
                             </VBox>
 

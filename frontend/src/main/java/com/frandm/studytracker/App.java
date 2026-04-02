@@ -99,7 +99,7 @@ public class App extends Application {
             }
         });
 
-        URL iconUrl = getClass().getResource("/com/frandm/studytracker/images/STlogo.png");
+        URL iconUrl = getClass().getResource("/com/frandm/studytracker/images/SZlogo.png");
 
         if (iconUrl != null) {
             finalStage.getIcons().add(new Image(iconUrl.toExternalForm()));
