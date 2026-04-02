@@ -2166,7 +2166,7 @@
 }
 
 .btn-confirm-delete {
-    -fx-background-color: -color-danger;
+    -fx-background-color: -planner-window-close-bg;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-background-radius: 8;
@@ -2175,7 +2175,6 @@
 }
 
 .btn-confirm-delete:hover {
-    -fx-background-color: -color-danger-hover;
     -fx-scale-x: 1.05;
     -fx-scale-y: 1.05;
 }

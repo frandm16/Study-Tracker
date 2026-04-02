@@ -65,7 +65,6 @@ public class StatsDashboardView {
     private final ComboBox<String> taskCombo;
     private final ComboBox<String> sessionSizeCombo;
     private final ComboBox<String> dayTypeCombo;
-    private final CheckBox topRatedCheck;
     private final Label resultCountLabel;
     private final Label filterSummaryLabel;
 
@@ -102,8 +101,6 @@ public class StatsDashboardView {
 
         VBox sidebar = new VBox(18);
         sidebar.getStyleClass().addAll("dashboard-panel", "dashboard-sidebar");
-        sidebar.setPrefWidth(290);
-        sidebar.setMinWidth(290);
 
         Label filterTitle = new Label("Analytics Filters");
         filterTitle.getStyleClass().add("dashboard-sidebar-title");
@@ -131,9 +128,6 @@ public class StatsDashboardView {
         dayTypeCombo.getItems().addAll(OPTION_ALL_DAY_TYPES, "Weekdays", "Weekends");
         dayTypeCombo.getSelectionModel().selectFirst();
 
-        topRatedCheck = new CheckBox("Only rating 4-5");
-        topRatedCheck.getStyleClass().add("dashboard-filter-check");
-
         Button resetButton = new Button("Clear filters");
         resetButton.getStyleClass().addAll("button-secondary", "dashboard-reset-button");
         resetButton.setMaxWidth(Double.MAX_VALUE);
@@ -150,7 +144,7 @@ public class StatsDashboardView {
                 filterText,
                 createFilterSection("Period", "Change the time frame of the analysis.", rangePresetCombo, createDateRangeRow()),
                 createFilterSection("Context", "Narrow down by study area or specific task.", tagCombo, taskCombo),
-                createFilterSection("Session type", "Filter by duration, days, and quality.", sessionSizeCombo, dayTypeCombo, topRatedCheck),
+                createFilterSection("Session type", "Filter by duration, days, and quality.", sessionSizeCombo, dayTypeCombo),
                 resetButton,
                 new Separator(),
                 resultCountLabel,
@@ -266,10 +260,20 @@ public class StatsDashboardView {
 
         content.getChildren().addAll(heroCard, statsGrid, chartsRow, lowerRow, heatmapCard);
 
-        HBox root = new HBox(20, sidebar, content);
+        GridPane root = new GridPane();
         root.getStyleClass().add("dashboard-workspace");
         root.setPadding(new Insets(18, 0, 60, 0));
-        HBox.setHgrow(content, Priority.ALWAYS);
+        root.setHgap(20);
+        root.setVgap(0);
+        ColumnConstraints sidebarColumn = new ColumnConstraints();
+        sidebarColumn.setPercentWidth(25);
+        sidebarColumn.setHgrow(Priority.NEVER);
+        ColumnConstraints contentColumn = new ColumnConstraints();
+        contentColumn.setPercentWidth(75);
+        contentColumn.setHgrow(Priority.ALWAYS);
+        root.getColumnConstraints().addAll(sidebarColumn, contentColumn);
+        root.add(sidebar, 0, 0);
+        root.add(content, 1, 0);
         refresh();
 
         host.setContent(root);
@@ -397,7 +401,6 @@ public class StatsDashboardView {
         taskCombo.valueProperty().addListener((_, _, _) -> triggerRender());
         sessionSizeCombo.valueProperty().addListener((_, _, _) -> triggerRender());
         dayTypeCombo.valueProperty().addListener((_, _, _) -> triggerRender());
-        topRatedCheck.selectedProperty().addListener((_, _, _) -> triggerRender());
     }
 
     private void triggerRender() {
@@ -434,7 +437,6 @@ public class StatsDashboardView {
         updateTaskOptions(OPTION_ALL_TAGS, OPTION_ALL_TASKS);
         sessionSizeCombo.setValue(OPTION_ALL_SIZES);
         dayTypeCombo.setValue(OPTION_ALL_DAY_TYPES);
-        topRatedCheck.setSelected(false);
         updateCustomDateState();
         updatingFilterState = false;
         applyFiltersAndRender();
@@ -465,7 +467,7 @@ public class StatsDashboardView {
         }
         return new FilterState(
                 start, end, tagCombo.getValue(), taskCombo.getValue(),
-                sessionSizeCombo.getValue(), dayTypeCombo.getValue(), topRatedCheck.isSelected()
+                sessionSizeCombo.getValue(), dayTypeCombo.getValue()
         );
     }
 
@@ -478,7 +480,7 @@ public class StatsDashboardView {
         if (!OPTION_ALL_TASKS.equals(filter.task()) && !Objects.equals(normalizeLabel(session.getTask(), "No task"), filter.task())) return false;
         if (!OPTION_ALL_SIZES.equals(filter.sizeBucket()) && !matchesSizeBucket(session.getTotalMinutes(), filter.sizeBucket())) return false;
         if (!OPTION_ALL_DAY_TYPES.equals(filter.dayType()) && !matchesDayType(date.getDayOfWeek(), filter.dayType())) return false;
-        return !filter.topRatedOnly() || session.getRating() >= 4;
+        return true;
     }
 
     private DashboardSnapshot buildSnapshot(List<Session> sessions, FilterState filter) {
@@ -961,7 +963,6 @@ public class StatsDashboardView {
         if (!OPTION_ALL_TASKS.equals(filter.task())) parts.add("Task: " + filter.task());
         if (!OPTION_ALL_SIZES.equals(filter.sizeBucket())) parts.add(filter.sizeBucket());
         if (!OPTION_ALL_DAY_TYPES.equals(filter.dayType())) parts.add(filter.dayType());
-        if (filter.topRatedOnly()) parts.add("Rating 4-5");
         return parts.isEmpty() ? "No active filters" : String.join("  •  ", parts);
     }
 
@@ -982,7 +983,7 @@ public class StatsDashboardView {
 
     private record FilterState(
             LocalDate startDate, LocalDate endDate, String tag, String task,
-            String sizeBucket, String dayType, boolean topRatedOnly
+            String sizeBucket, String dayType
     ) {}
 
     private record DashboardSnapshot(

@@ -512,24 +512,6 @@
                                     </VBox>
                                 </TitledPane>
                             </VBox>
-
-                            <VBox spacing="14" styleClass="settings-card">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Background Music" styleClass="settings-card-title"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Button onAction="#handleToggleMusic" styleClass="settings-preview-btn">
-                                        <graphic>
-                                            <FontIcon fx:id="musicToggleIcon" iconLiteral="mdi2p-play-circle-outline" styleClass="settings-preview-icon"/>
-                                        </graphic>
-                                    </Button>
-                                </HBox>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <FontIcon iconLiteral="mdi2m-music-circle-outline" styleClass="settings-volume-icon"/>
-                                    <Slider fx:id="backgroundMusicVolumeSlider" HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="backgroundMusicVolumeLabel" text="100%" styleClass="val-label" minWidth="45"/>
-                                </HBox>
-                            </VBox>
-
                         </VBox>
                     </ScrollPane>
                 </Tab>

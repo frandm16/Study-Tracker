@@ -48,7 +48,7 @@ public class TrackerController {
     @FXML public HBox starsContainer, editStarsContainer, buttonsHbox, floatingDock, activeTaskContainer;
     @FXML public Label timerLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
             alarmVolumeValLabel, widthSliderValLabel, countdownValLabel, circleSizeValLabel,
-            selectedNameLabel, notificationVolumeLabel, masterVolumeLabel, backgroundMusicVolumeLabel;
+            selectedNameLabel, notificationVolumeLabel, masterVolumeLabel;
     @FXML public TextField summaryTitle, editTitleField, tagNameInput, fuzzySearchInput;
     @FXML public TextArea summaryDesc, editDescArea;
     @FXML public ComboBox<String> editTagCombo, editTaskCombo;
@@ -57,8 +57,7 @@ public class TrackerController {
     @FXML public ToggleButton timerModeBtn, pomoModeBtn, countdownModeBtn;
     @FXML public ToggleSwitch countBreakTime, autoPomoToggle, autoBreakToggle;
     @FXML public Slider workSlider, shortSlider, longSlider, intervalSlider, alarmVolumeSlider,
-            widthSlider, countdownSlider, circleSizeSlider, notificationVolumeSlider, masterVolumeSlider,
-            backgroundMusicVolumeSlider;
+            widthSlider, countdownSlider, circleSizeSlider, notificationVolumeSlider, masterVolumeSlider;
     @FXML public ColumnConstraints colRightStats, colCenterStats, colLeftStats;
     @FXML public ScrollPane statsContainer;
     @FXML public MediaView backgroundVideoView;
@@ -66,7 +65,6 @@ public class TrackerController {
     @FXML public ToggleSwitch enableToastToggle;
     @FXML public Slider notifDurationSlider;
     @FXML public Label notifDurationLabel, appVersionLabel;
-    @FXML public FontIcon musicToggleIcon;
 
     @FXML public ComboBox<String> alarmPresetComboBox;
     @FXML public TextField customAlarmSoundField;
@@ -284,16 +282,9 @@ public class TrackerController {
         setupSlider(intervalSlider, intervalValLabel, engine.getInterval(), engine::setInterval, "");
         setupSlider(countdownSlider, countdownValLabel, engine.getCountdownMins(), engine::setCountdownMins, " min");
 
-        setupSlider(masterVolumeSlider, masterVolumeLabel, engine.getMasterVolume(), (newVolume) -> {
-            engine.setMasterVolume(newVolume);
-            SoundManager.updateMusicVolume();
-        }, " %");
+        setupSlider(masterVolumeSlider, masterVolumeLabel, engine.getMasterVolume(), engine::setMasterVolume, " %");
         setupSlider(alarmVolumeSlider, alarmVolumeValLabel, engine.getAlarmVolume(), engine::setAlarmVolume, " %");
         setupSlider(notificationVolumeSlider, notificationVolumeLabel, engine.getNotificationVolume(), engine::setNotificationVolume, " %");
-        setupSlider(backgroundMusicVolumeSlider, backgroundMusicVolumeLabel, engine.getBackgroundMusicVolume(), (newVolume) -> {
-            engine.setBackgroundMusicVolume(newVolume);
-            SoundManager.updateMusicVolume();
-        }, " %");
 
         setupSlider(widthSlider, widthSliderValLabel, engine.getWidthStats(), engine::setWidthStats, " %");
         setupSlider(circleSizeSlider, circleSizeValLabel, engine.getUiSize(), (newVal) -> {
@@ -493,7 +484,6 @@ public class TrackerController {
                 (int)masterVolumeSlider.getValue(),
                 (int)alarmVolumeSlider.getValue(),
                 (int)notificationVolumeSlider.getValue(),
-                (int)backgroundMusicVolumeSlider.getValue(),
                 (int)widthSlider.getValue(),
                 (int)circleSizeSlider.getValue(),
                 engine.getCurrentMode(),
@@ -608,17 +598,7 @@ public class TrackerController {
 
     @FXML
     private void handlePreviewNotification() {
-        // Reproducir sonido de notificación de ejemplo (tipo INFO)
         SoundManager.playNotificationSound(NotificationManager.NotificationType.INFO);
-    }
-
-    @FXML
-    private void handleToggleMusic() {
-        SoundManager.toggleMusic(SoundManager.SoundType.BACKGROUND_MUSIC);
-        if (musicToggleIcon != null) {
-            String currentIcon = musicToggleIcon.getIconLiteral();
-            musicToggleIcon.setIconLiteral(currentIcon.contains("play") ? "mdi2p-pause-circle-outline" : "mdi2p-play-circle-outline");
-        }
     }
 
     @FXML
@@ -634,7 +614,6 @@ public class TrackerController {
         masterVolumeSlider.setValue(engine.getMasterVolume());
         alarmVolumeSlider.setValue(engine.getAlarmVolume());
         notificationVolumeSlider.setValue(engine.getNotificationVolume());
-        backgroundMusicVolumeSlider.setValue(engine.getBackgroundMusicVolume());
 
         widthSlider.setValue(engine.getWidthStats());
         circleSizeSlider.setValue(engine.getUiSize());
@@ -666,7 +645,6 @@ public class TrackerController {
         if (infoSoundField != null) infoSoundField.clear();
 
         updateEngineSettings();
-        SoundManager.updateMusicVolume();
         ConfigManager.save(engine);
         NotificationManager.show("Settings Reset", "All settings have been restored to defaults.", NotificationManager.NotificationType.INFO);
     }

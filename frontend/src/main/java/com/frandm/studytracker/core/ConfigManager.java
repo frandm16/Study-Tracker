@@ -35,7 +35,6 @@ public class ConfigManager {
         props.setProperty("masterVolume", String.valueOf(engine.getMasterVolume()));
         props.setProperty("alarmVolume", String.valueOf(engine.getAlarmVolume()));
         props.setProperty("notificationVolume", String.valueOf(engine.getNotificationVolume()));
-        props.setProperty("backgroundMusicVolume", String.valueOf(engine.getBackgroundMusicVolume()));
         props.setProperty("widthStats", String.valueOf(engine.getWidthStats()));
         props.setProperty("uiSizeFactor", String.valueOf(engine.getUiSize()));
         props.setProperty("currentMode", engine.getCurrentMode().name());
@@ -83,7 +82,6 @@ public class ConfigManager {
                     Integer.parseInt(props.getProperty("masterVolume", String.valueOf(engine.getMasterVolume()))),
                     Integer.parseInt(props.getProperty("alarmVolume", String.valueOf(engine.getAlarmVolume()))),
                     Integer.parseInt(props.getProperty("notificationVolume", String.valueOf(engine.getNotificationVolume()))),
-                    Integer.parseInt(props.getProperty("backgroundMusicVolume", String.valueOf(engine.getBackgroundMusicVolume()))),
                     Integer.parseInt(props.getProperty("widthStats", String.valueOf(engine.getWidthStats()))),
                     Integer.parseInt(props.getProperty("uiSizeFactor", String.valueOf(engine.getUiSize()))),
                     TrackerEngine.Mode.valueOf(props.getProperty("currentMode", String.valueOf(engine.getCurrentMode()))),
