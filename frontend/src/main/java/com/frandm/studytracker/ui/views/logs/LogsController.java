@@ -1,7 +1,7 @@
 package com.frandm.studytracker.ui.views.logs;
 
 import com.frandm.studytracker.client.ApiClient;
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import com.frandm.studytracker.models.Session;
 import com.frandm.studytracker.core.NotificationManager;
 import javafx.scene.control.*;
@@ -11,7 +11,7 @@ import java.util.List;
 
 public class LogsController {
 
-    private final PomodoroController mainController;
+    private final TrackerController mainController;
     private HistoryTab historyTab;
     private FocusTab focusTab;
     private CalendarTab calendarTab;
@@ -20,7 +20,7 @@ public class LogsController {
     private Session sessionToEdit;
     private int editRating = 0;
 
-    public LogsController(PomodoroController mainController) {
+    public LogsController(TrackerController mainController) {
         this.mainController = mainController;
     }
 

@@ -1,6 +1,6 @@
 package com.frandm.studytracker.ui.views.logs;
 
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import com.frandm.studytracker.ui.views.FloatingDockView;
 import javafx.animation.FadeTransition;
 import javafx.animation.TranslateTransition;
@@ -19,8 +19,8 @@ public class LogsView extends StackPane {
 
     private String currentTabId;
 
-    public LogsView(PomodoroController pomodoroController) {
-        this.logsController = new LogsController(pomodoroController);
+    public LogsView(TrackerController trackerController) {
+        this.logsController = new LogsController(trackerController);
 
         HBox tabBarContainer = new HBox();
 

@@ -1,6 +1,6 @@
 package com.frandm.studytracker.ui.views;
 
-import com.frandm.studytracker.core.PomodoroEngine;
+import com.frandm.studytracker.core.TrackerEngine;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -43,7 +43,7 @@ public class FloatingDockView {
     }
 
     private final HBox container;
-    private final Supplier<PomodoroEngine> engineSupplier;
+    private final Supplier<TrackerEngine> engineSupplier;
     private final BiConsumer<Section, Integer> onNavigate;
     private final Runnable onSettingsRequested;
     private final Runnable onBackgroundsRequested;
@@ -61,7 +61,7 @@ public class FloatingDockView {
 
     public FloatingDockView(
             HBox container,
-            Supplier<PomodoroEngine> engineSupplier,
+            Supplier<TrackerEngine> engineSupplier,
             BiConsumer<Section, Integer> onNavigate,
             Runnable onSettingsRequested,
             Runnable onBackgroundsRequested
@@ -277,7 +277,7 @@ public class FloatingDockView {
     public void refreshState() {
         if (genericMode || engineSupplier == null) return;
 
-        PomodoroEngine engine = engineSupplier.get();
+        TrackerEngine engine = engineSupplier.get();
 
         ToggleButton oldButton = (previousSection != null) ? sectionButtons.get(previousSection) : null;
         VBox oldText = (previousSection != null) ? textGroups.get(previousSection) : null;
@@ -404,11 +404,11 @@ public class FloatingDockView {
         intro.play();
     }
 
-    private String resolveDockSubtitle(Section section, PomodoroEngine engine) {
+    private String resolveDockSubtitle(Section section, TrackerEngine engine) {
         return switch (section) {
             case TIMER -> switch (engine.getCurrentState()) {
-                case WORK, SHORT_BREAK, LONG_BREAK -> engine.getCurrentMode() == PomodoroEngine.Mode.POMODORO ? "Pomodoro running" :
-                        engine.getCurrentMode() == PomodoroEngine.Mode.COUNTDOWN ? "Countdown in progress" : "Timer in progress";
+                case WORK, SHORT_BREAK, LONG_BREAK -> engine.getCurrentMode() == TrackerEngine.Mode.POMODORO ? "Pomodoro running" :
+                        engine.getCurrentMode() == TrackerEngine.Mode.COUNTDOWN ? "Countdown in progress" : "Timer in progress";
                 case WAITING -> "Paused at " + engine.getFormattedTime();
                 default -> "Ready to study";
             };

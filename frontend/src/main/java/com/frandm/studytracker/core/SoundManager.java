@@ -51,7 +51,7 @@ public class SoundManager {
     }
 
     private static final Map<SoundType, AudioClip> soundCache = new EnumMap<>(SoundType.class);
-    private static PomodoroEngine engine;
+    private static TrackerEngine engine;
     private static MediaPlayer musicPlayer;
 
     private static final Map<NotificationManager.NotificationType, AudioClip> customNotificationSounds = new EnumMap<>(NotificationManager.NotificationType.class);
@@ -62,7 +62,7 @@ public class SoundManager {
     private static AlarmSound selectedAlarmPreset = AlarmSound.BIRDS;
     private static final Map<AlarmSound, AudioClip> alarmSoundCache = new EnumMap<>(AlarmSound.class);
 
-    public static void setEngine(PomodoroEngine engineInstance) {
+    public static void setEngine(TrackerEngine engineInstance) {
         engine = engineInstance;
     }
 

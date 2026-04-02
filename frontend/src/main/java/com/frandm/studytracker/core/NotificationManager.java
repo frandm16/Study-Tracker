@@ -34,13 +34,13 @@ public class NotificationManager {
     }
 
     private static VBox container;
-    private static PomodoroEngine engine;
+    private static TrackerEngine engine;
 
     public static void init(VBox notificationVBox) {
         container = notificationVBox;
     }
 
-    public static void setEngine(PomodoroEngine engineInstance) {
+    public static void setEngine(TrackerEngine engineInstance) {
         engine = engineInstance;
     }
 

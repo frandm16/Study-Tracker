@@ -1,6 +1,6 @@
 package com.frandm.studytracker.ui.views.planner;
 
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import com.frandm.studytracker.ui.views.FloatingDockView;
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
@@ -21,7 +21,7 @@ public class PlannerView extends VBox {
 
     private final FloatingDockView tabBar;
 
-    public PlannerView(PomodoroController controller, PlannerController plannerController, DailyTab daily, WeeklyTab weekly) {
+    public PlannerView(TrackerController controller, PlannerController plannerController, DailyTab daily, WeeklyTab weekly) {
         this.plannerController = plannerController;
         this.dailyTab = daily;
         this.weeklyTab = weekly;
@@ -54,7 +54,7 @@ public class PlannerView extends VBox {
         updateTitle();
     }
 
-    private HBox createNavigationHeader(PomodoroController controller) {
+    private HBox createNavigationHeader(TrackerController controller) {
         HBox header = new HBox(15);
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(10, 30, 10, 30));

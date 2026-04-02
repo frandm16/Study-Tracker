@@ -4,7 +4,7 @@ import atlantafx.base.theme.Styles;
 import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.core.NotificationManager;
 import com.frandm.studytracker.core.Logger;
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -41,7 +41,7 @@ public class DailyTab extends VBox {
     private final Label lblTodoHeader = new Label("To-Do List");
     private final Label overlayTitle = new Label();
 
-    private final PomodoroController pomodoroController;
+    private final TrackerController trackerController;
     private LocalDate currentDate = LocalDate.now();
     private Runnable refreshAction = () -> {};
     private Popup activePopup;
@@ -49,8 +49,8 @@ public class DailyTab extends VBox {
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
-    public DailyTab(PomodoroController pomodoroController) {
-        this.pomodoroController = pomodoroController;
+    public DailyTab(TrackerController trackerController) {
+        this.trackerController = trackerController;
         this.getStyleClass().add("daily-tab");
         VBox.setVgrow(this, Priority.ALWAYS);
         initLayout();
@@ -326,11 +326,11 @@ public class DailyTab extends VBox {
         overlayRoot.setPickOnBounds(true);
         overlayRoot.setOnMouseClicked(_ -> closeOverlay());
 
-        pomodoroController.showPlannerOverlay(overlayRoot);
+        trackerController.showPlannerOverlay(overlayRoot);
     }
 
     private void closeOverlay() {
-        pomodoroController.hidePlannerOverlay();
+        trackerController.hidePlannerOverlay();
     }
 
     private void saveCurrentNote() {
@@ -348,8 +348,8 @@ public class DailyTab extends VBox {
     private void handleAddTodo(TextField todoField) {
         String text = todoField.getText().trim();
         if (text.isEmpty()) return;
-        String tagName = pomodoroController.getSelectedTag();
-        String taskName = pomodoroController.getSelectedTask();
+        String tagName = trackerController.getSelectedTag();
+        String taskName = trackerController.getSelectedTask();
         if (tagName == null || tagName.isBlank() || taskName == null || taskName.isBlank()) {
             NotificationManager.show("Select task", "Choose an active task before creating a to-do", NotificationManager.NotificationType.INFO);
             return;
@@ -896,7 +896,7 @@ public class DailyTab extends VBox {
 
     private VBox popupRoot() {
         VBox root = new VBox(12);
-        root.getStyleClass().addAll("calendar-popup", pomodoroController.getCurrentTheme());
+        root.getStyleClass().addAll("calendar-popup", trackerController.getCurrentTheme());
         root.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/frandm/studytracker/css/styles.css")).toExternalForm());
         root.setPadding(new Insets(20));
         root.setPrefWidth(420);

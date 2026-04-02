@@ -23,7 +23,7 @@ public class ConfigManager {
     }
 
 
-    public static void save(PomodoroEngine engine) {
+    public static void save(TrackerEngine engine) {
         Properties props = new Properties();
         props.setProperty("workMins", String.valueOf(engine.getWorkMins()));
         props.setProperty("shortMins", String.valueOf(engine.getShortMins()));
@@ -61,7 +61,7 @@ public class ConfigManager {
         }
     }
 
-    public static void load(PomodoroEngine engine) {
+    public static void load(TrackerEngine engine) {
         File configFile = getConfigFile();
 
         if (!configFile.exists()) {
@@ -86,7 +86,7 @@ public class ConfigManager {
                     Integer.parseInt(props.getProperty("backgroundMusicVolume", String.valueOf(engine.getBackgroundMusicVolume()))),
                     Integer.parseInt(props.getProperty("widthStats", String.valueOf(engine.getWidthStats()))),
                     Integer.parseInt(props.getProperty("uiSizeFactor", String.valueOf(engine.getUiSize()))),
-                    PomodoroEngine.Mode.valueOf(props.getProperty("currentMode", String.valueOf(engine.getCurrentMode()))),
+                    TrackerEngine.Mode.valueOf(props.getProperty("currentMode", String.valueOf(engine.getCurrentMode()))),
                     Integer.parseInt(props.getProperty("countdownMins", String.valueOf(engine.getCountdownMins()))),
                     props.getProperty("theme", String.valueOf(engine.getCurrentTheme())),
                     Integer.parseInt(props.getProperty("notificationDuration", String.valueOf(engine.getNotificationDuration()))),

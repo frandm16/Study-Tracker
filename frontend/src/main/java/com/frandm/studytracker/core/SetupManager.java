@@ -1,7 +1,7 @@
 package com.frandm.studytracker.core;
 
 import com.frandm.studytracker.client.ApiClient;
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -18,9 +18,9 @@ public class SetupManager {
     private String filterTag = null;
     private String selectedTag = null;
     private String selectedTask = null;
-    private final PomodoroController controller;
+    private final TrackerController controller;
 
-    public SetupManager(PomodoroController p){
+    public SetupManager(TrackerController p){
         this.controller = p;
     }
 

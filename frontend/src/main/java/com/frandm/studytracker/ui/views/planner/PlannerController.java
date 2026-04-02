@@ -1,7 +1,7 @@
 package com.frandm.studytracker.ui.views.planner;
 
 import com.frandm.studytracker.client.ApiClient;
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import javafx.application.Platform;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,7 +23,7 @@ public class PlannerController {
     );
     private final AtomicLong refreshVersion = new AtomicLong();
 
-    public PlannerController(PomodoroController controller) {
+    public PlannerController(TrackerController controller) {
         this.dailyTab = new DailyTab(controller);
         this.weeklyTab = new WeeklyTab(controller);
         this.dailyTab.setRefreshAction(this::refreshDailyOnly);

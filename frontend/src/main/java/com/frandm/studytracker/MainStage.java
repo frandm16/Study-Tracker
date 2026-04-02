@@ -1,8 +1,7 @@
 package com.frandm.studytracker;
 
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import com.frandm.studytracker.core.NotificationManager;
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -18,7 +17,7 @@ public class MainStage extends NfxStage {
     public MainStage() throws IOException {
         this.loader = new FXMLLoader(getClass().getResource("/com/frandm/studytracker/fxml/main_view.fxml"));
         Parent root = loader.load();
-        PomodoroController controller = loader.getController();
+        TrackerController controller = loader.getController();
 
         Scene scene = new Scene(root);
         scene.setFill(Color.TRANSPARENT);

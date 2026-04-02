@@ -4,7 +4,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
 
-public class PomodoroEngine {
+public class TrackerEngine {
 
     public enum Mode { POMODORO, TIMER, COUNTDOWN }
     public enum State { MENU, WORK, SHORT_BREAK, LONG_BREAK, WAITING }
@@ -57,7 +57,7 @@ public class PomodoroEngine {
     private Runnable onTimerFinished;
     //endregion
 
-    public PomodoroEngine() {
+    public TrackerEngine() {
         this.secondsRemaining = workMins * 60;
         setupTimeline();
     }

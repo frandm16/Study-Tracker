@@ -1,7 +1,7 @@
 package com.frandm.studytracker;
 
 import atlantafx.base.theme.PrimerDark;
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import com.frandm.studytracker.core.NotificationManager;
 import fr.brouillard.oss.cssfx.CSSFX;
 import javafx.animation.FadeTransition;
@@ -36,7 +36,7 @@ public class App extends Application {
 
         Stage finalStage;
         Parent root;
-        PomodoroController controller;
+        TrackerController controller;
 
         if (isWindows) {
             MainStage mainStage = new MainStage();

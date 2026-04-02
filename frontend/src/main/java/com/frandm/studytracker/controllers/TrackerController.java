@@ -35,7 +35,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-public class PomodoroController {
+public class TrackerController {
 
     public static final String PROJECT_VERSION = "v1.3.0";
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane;
@@ -76,7 +76,7 @@ public class PomodoroController {
     @FXML public TextField infoSoundField;
     //endregion
 
-    private final PomodoroEngine engine = new PomodoroEngine();
+    private final TrackerEngine engine = new TrackerEngine();
     private final SetupManager setupManager = new SetupManager(this);
     private final UIManager uiManager = new UIManager();
     @FXML
@@ -325,9 +325,9 @@ public class PomodoroController {
         timerModeBtn.setToggleGroup(modeGroup);
         countdownModeBtn.setToggleGroup(modeGroup);
 
-        pomoModeBtn.setUserData(PomodoroEngine.Mode.POMODORO);
-        timerModeBtn.setUserData(PomodoroEngine.Mode.TIMER);
-        countdownModeBtn.setUserData(PomodoroEngine.Mode.COUNTDOWN);
+        pomoModeBtn.setUserData(TrackerEngine.Mode.POMODORO);
+        timerModeBtn.setUserData(TrackerEngine.Mode.TIMER);
+        countdownModeBtn.setUserData(TrackerEngine.Mode.COUNTDOWN);
 
         switch (engine.getCurrentMode()) {
             case POMODORO -> pomoModeBtn.setSelected(true);
@@ -338,7 +338,7 @@ public class PomodoroController {
 
         modeGroup.selectedToggleProperty().addListener((_, oldToggle, newToggle) -> {
             if (newToggle != null) {
-                PomodoroEngine.Mode selectedMode = (PomodoroEngine.Mode) newToggle.getUserData();
+                TrackerEngine.Mode selectedMode = (TrackerEngine.Mode) newToggle.getUserData();
                 engine.setMode(selectedMode);
                 updateSettingsVisibility(selectedMode);
             } else if (oldToggle != null) {
@@ -373,7 +373,7 @@ public class PomodoroController {
 
         engine.setOnTimerFinished(() -> Platform.runLater(() -> {
             SoundManager.playAlarmSound();
-            if (engine.getCurrentMode() == PomodoroEngine.Mode.COUNTDOWN) {
+            if (engine.getCurrentMode() == TrackerEngine.Mode.COUNTDOWN) {
                 handleFinish();
             }
         }));
@@ -508,7 +508,7 @@ public class PomodoroController {
     //region Handlers
     @FXML
     private void handleMainAction() {
-        if (engine.getCurrentState() == PomodoroEngine.State.MENU) {
+        if (engine.getCurrentState() == TrackerEngine.State.MENU) {
             if (setupManager.getSelectedTag() == null) {
                 toggleSetup();
             } else {
@@ -516,7 +516,7 @@ public class PomodoroController {
                 startDate = LocalDateTime.now();
             }
         } else {
-            if (engine.getCurrentState() == PomodoroEngine.State.WAITING) engine.start();
+            if (engine.getCurrentState() == TrackerEngine.State.WAITING) engine.start();
             else engine.pause();
         }
         updateUIFromEngine();
@@ -646,7 +646,7 @@ public class PomodoroController {
         if (enableToastToggle != null) enableToastToggle.setSelected(true);
 
         pomoModeBtn.setSelected(true);
-        engine.setMode(PomodoroEngine.Mode.POMODORO);
+        engine.setMode(TrackerEngine.Mode.POMODORO);
 
         engine.setCurrentTheme("primer-dark");
         applyTheme();
@@ -796,25 +796,25 @@ public class PomodoroController {
 
     //region UI
     private void updateUIFromEngine() {
-        PomodoroEngine.Mode mode = engine.getCurrentMode();
-        PomodoroEngine.State current = engine.getCurrentState();
-        PomodoroEngine.State logical = engine.getLogicalState();
+        TrackerEngine.Mode mode = engine.getCurrentMode();
+        TrackerEngine.State current = engine.getCurrentState();
+        TrackerEngine.State logical = engine.getLogicalState();
 
-        boolean isCountdownAtZero = (mode == PomodoroEngine.Mode.COUNTDOWN && engine.getSecondsRemaining() <= 0);
+        boolean isCountdownAtZero = (mode == TrackerEngine.Mode.COUNTDOWN && engine.getSecondsRemaining() <= 0);
 
         startPauseBtn.setVisible(!isCountdownAtZero);
         startPauseBtn.setManaged(!isCountdownAtZero);
 
 
-        if (current == PomodoroEngine.State.MENU) {
+        if (current == TrackerEngine.State.MENU) {
             updateIcon(startPauseBtn, "menu-icon", setupManager.getSelectedTag() == null ? "mdi2p-plus" : "mdi2p-play",setupManager.getSelectedTag() == null ? "Setup" : "Play");
         } else {
-            updateIcon(startPauseBtn, "menu-icon", current == PomodoroEngine.State.WAITING ? "mdi2p-play" : "mdi2p-pause", current == PomodoroEngine.State.WAITING ? "Play" : "Pause");
+            updateIcon(startPauseBtn, "menu-icon", current == TrackerEngine.State.WAITING ? "mdi2p-play" : "mdi2p-pause", current == TrackerEngine.State.WAITING ? "Play" : "Pause");
         }
 
-        boolean isMenu = (current == PomodoroEngine.State.MENU);
-        skipBtn.setVisible(!isMenu && mode == PomodoroEngine.Mode.POMODORO);
-        skipBtn.setManaged(!isMenu && mode == PomodoroEngine.Mode.POMODORO);
+        boolean isMenu = (current == TrackerEngine.State.MENU);
+        skipBtn.setVisible(!isMenu && mode == TrackerEngine.Mode.POMODORO);
+        skipBtn.setManaged(!isMenu && mode == TrackerEngine.Mode.POMODORO);
 
         finishBtn.setVisible(!isMenu);
         finishBtn.setManaged(!isMenu);
@@ -837,8 +837,8 @@ public class PomodoroController {
         refreshDynamicDock();
     }
 
-    private void updatePomodoroUI(PomodoroEngine.State logical) {
-        String text = (logical == PomodoroEngine.State.MENU) ? "Pomodoro" : "Pomodoro - #" + (engine.getSessionCounter() + 1);
+    private void updatePomodoroUI(TrackerEngine.State logical) {
+        String text = (logical == TrackerEngine.State.MENU) ? "Pomodoro" : "Pomodoro - #" + (engine.getSessionCounter() + 1);
         switch (logical) {
             case MENU -> applyStyle(text, "Ready to play");
             case WORK -> applyStyle(text, "Working");
@@ -847,14 +847,14 @@ public class PomodoroController {
         }
     }
 
-    private void updateTimerUI(PomodoroEngine.State logical) {
+    private void updateTimerUI(TrackerEngine.State logical) {
         switch (logical) {
             case MENU -> applyStyle("Timer", "Ready to play");
             case WORK -> applyStyle("Timer", "Working");
         }
     }
 
-    private void updateCountdownUI(PomodoroEngine.State logical) {
+    private void updateCountdownUI(TrackerEngine.State logical) {
         switch (logical) {
             case MENU -> applyStyle("Countdown", "Ready to play");
             case WORK -> applyStyle("Countdown", "Working");
@@ -958,7 +958,7 @@ public class PomodoroController {
         s.valueProperty().addListener((_, _, nv) -> {
             if (l != null) l.setText(nv.intValue() + unit);
             a.accept(nv.intValue());
-            if (engine.getCurrentState() == PomodoroEngine.State.MENU) {
+            if (engine.getCurrentState() == TrackerEngine.State.MENU) {
                 timerLabel.setText(engine.getFormattedTime());
             }
         });
@@ -1317,7 +1317,7 @@ public class PomodoroController {
     }
 
     public void playScheduleSession(String tag, String task) {
-        if(engine.getCurrentState() != PomodoroEngine.State.MENU) return;
+        if(engine.getCurrentState() != TrackerEngine.State.MENU) return;
         setupManager.setSelectedTag(tag);
         setupManager.setSelectedTask(task);
         updateActiveTaskDisplay(setupManager.getSelectedTag(), setupManager.getSelectedTask());
@@ -1424,7 +1424,7 @@ public class PomodoroController {
     }
 
     //region random
-    private void updateSettingsVisibility(PomodoroEngine.Mode mode) {
+    private void updateSettingsVisibility(TrackerEngine.Mode mode) {
         pomoSettingsPane.setVisible(false);
         pomoSettingsPane.setManaged(false);
 
@@ -1446,7 +1446,7 @@ public class PomodoroController {
     }
 
     private void updateModeButtonsAvailability() {
-        if (engine.getCurrentState() != PomodoroEngine.State.MENU) {
+        if (engine.getCurrentState() != TrackerEngine.State.MENU) {
             pomoModeBtn.setDisable(true);
             timerModeBtn.setDisable(true);
             countdownModeBtn.setDisable(true);
@@ -1461,7 +1461,7 @@ public class PomodoroController {
     public String getCurrentTheme() { return engine.getCurrentTheme();}
 
     public boolean isTimerActive() {
-        return engine.getCurrentState() != PomodoroEngine.State.MENU;
+        return engine.getCurrentState() != TrackerEngine.State.MENU;
     }
 
     private record BackgroundOption(String label, String source) {}

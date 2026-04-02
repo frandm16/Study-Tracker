@@ -3,7 +3,7 @@ package com.frandm.studytracker.ui.views.planner;
 import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.core.TagEventBus;
 import com.frandm.studytracker.core.Logger;
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -24,7 +24,7 @@ public class WeeklyTab extends VBox {
     private GridPane headerGrid;
     private ScrollPane scrollPane;
     private LocalDate currentWeekStart;
-    private final PomodoroController controller;
+    private final TrackerController controller;
     private Popup activePopup = null;
     private long lastPopupCloseTime = 0;
     private final double ROW_HEIGHT = 60.0;
@@ -41,7 +41,7 @@ public class WeeklyTab extends VBox {
     private List<Map<String, Object>> weeklyScheduled = new ArrayList<>();
     private List<Map<String, Object>> weeklyDeadlines = new ArrayList<>();
 
-    public WeeklyTab(PomodoroController controller) {
+    public WeeklyTab(TrackerController controller) {
         this.currentWeekStart = LocalDate.now().with(DayOfWeek.MONDAY);
         this.controller = controller;
         this.getStyleClass().add("calendar-root");

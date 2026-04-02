@@ -22,10 +22,10 @@ public class BackgroundManager {
 
     private final MediaView backgroundVideoView;
     private final Region backgroundVideoOverlay;
-    private final PomodoroEngine engine;
+    private final TrackerEngine engine;
     private MediaPlayer backgroundVideoPlayer;
 
-    public BackgroundManager(MediaView videoView, Region overlay, PomodoroEngine engine) {
+    public BackgroundManager(MediaView videoView, Region overlay, TrackerEngine engine) {
         this.backgroundVideoView = videoView;
         this.backgroundVideoOverlay = overlay;
         this.engine = engine;

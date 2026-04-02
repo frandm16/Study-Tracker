@@ -1,6 +1,6 @@
 package com.frandm.studytracker.ui.util;
 
-import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.controllers.TrackerController;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.scene.CacheHint;
@@ -71,7 +71,7 @@ public class UIManager {
         });
     }
 
-    public void updateActiveBadge(HBox container, String tag, String task, String color, PomodoroController controller) {
+    public void updateActiveBadge(HBox container, String tag, String task, String color, TrackerController controller) {
         container.getChildren().clear();
 
         HBox tagBox = new HBox(5);
