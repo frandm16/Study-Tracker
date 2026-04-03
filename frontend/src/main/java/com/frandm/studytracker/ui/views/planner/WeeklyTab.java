@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.planner;
 
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.NotificationManager;
 import com.frandm.studytracker.core.TagEventBus;
 import com.frandm.studytracker.core.Logger;
 import com.frandm.studytracker.controllers.TrackerController;
@@ -673,6 +674,15 @@ public class WeeklyTab extends VBox {
 
             LocalDateTime fE = dpEnd.getValue()
                     .atTime(PlannerHelpers.parseInt(he.getText()), PlannerHelpers.parseInt(me.getText()));
+
+            if (!fS.isBefore(fE)) {
+                NotificationManager.show(
+                        "Error",
+                        "Start time must be earlier than end time",
+                        NotificationManager.NotificationType.ERROR
+                );
+                return;
+            }
 
             try {
                 if (s == null) {

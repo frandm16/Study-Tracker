@@ -1835,7 +1835,7 @@ public class TrackerController {
         row.setGraphic(content);
         row.setOnAction(_ -> {
             closeShortcutMenu();
-            if (!ShortcutManager.MENU_ACTION_ID.equals(actionId)) {
+            if (!"toggle_shortcut_menu".equals(actionId)) {
                 shortcutManager.triggerAction(actionId);
             }
         });

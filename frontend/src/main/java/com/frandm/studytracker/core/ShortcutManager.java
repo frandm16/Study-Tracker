@@ -9,7 +9,6 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,30 +19,23 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class ShortcutManager {
-    private static final int SHORTCUT_GUARD_MS = 180;
-
-    public static final String MENU_ACTION_ID = "toggle_shortcut_menu";
-    public static final String MENU_SHORTCUT_LABEL = "Open Shortcut Menu";
-    private static final KeyCodeCombination DEFAULT_MENU_SHORTCUT = new KeyCodeCombination(
-            KeyCode.SLASH,
-            KeyCombination.CONTROL_DOWN
-    );
+    private static final int SHORTCUT_TIMEOUT_TIME = 180;
 
     public record ShortcutDefinition(String id, String label, KeyCodeCombination defaultCombination) {}
     public record CaptureResult(boolean success, boolean cancelled, String message) {}
 
     private static final List<ShortcutDefinition> DEFINITIONS = List.of(
             new ShortcutDefinition("toggle_shortcut_menu", "Open Shortcut Menu", combo(KeyCode.SLASH, false, false, false, false)),
-            new ShortcutDefinition("open_timer_tab", "Open Timer Tab", combo(KeyCode.DIGIT1, true, false, false, false)),
-            new ShortcutDefinition("open_planner_tab", "Open Planner Tab", combo(KeyCode.DIGIT2, true, false, false, false)),
-            new ShortcutDefinition("open_stats_tab", "Open Stats Tab", combo(KeyCode.DIGIT3, true, false, false, false)),
-            new ShortcutDefinition("open_history_tab", "Open Logs Tab", combo(KeyCode.DIGIT4, true, false, false, false)),
             new ShortcutDefinition("toggle_start_pause", "Start / Pause", combo(KeyCode.SPACE, false, false, false, false)),
             new ShortcutDefinition("skip_session", "Skip Session", combo(KeyCode.N, true, true, false, false)),
             new ShortcutDefinition("finish_session", "Finish Session", combo(KeyCode.F, true, true, false, false)),
             new ShortcutDefinition("toggle_settings", "Open / Close Settings", combo(KeyCode.COMMA, true, false, false, false)),
             new ShortcutDefinition("open_setup", "Open Setup", combo(KeyCode.S, true, true, false, false)),
-            new ShortcutDefinition("toggle_fullscreen", "Toggle Fullscreen", combo(KeyCode.ENTER, false, true, false, false))
+            new ShortcutDefinition("toggle_fullscreen", "Toggle Fullscreen", combo(KeyCode.ENTER, false, true, false, false)),
+            new ShortcutDefinition("open_timer_tab", "Open Timer Tab", combo(KeyCode.DIGIT1, true, false, false, false)),
+            new ShortcutDefinition("open_planner_tab", "Open Planner Tab", combo(KeyCode.DIGIT2, true, false, false, false)),
+            new ShortcutDefinition("open_stats_tab", "Open Stats Tab", combo(KeyCode.DIGIT3, true, false, false, false)),
+            new ShortcutDefinition("open_history_tab", "Open Logs Tab", combo(KeyCode.DIGIT4, true, false, false, false))
 
     );
 
@@ -58,7 +50,7 @@ public class ShortcutManager {
     private String captureActionId;
     private Consumer<CaptureResult> captureCallback;
     private boolean shortcutDispatchLocked;
-    private final PauseTransition shortcutGuard = new PauseTransition(javafx.util.Duration.millis(SHORTCUT_GUARD_MS));
+    private final PauseTransition shortcutGuard = new PauseTransition(javafx.util.Duration.millis(SHORTCUT_TIMEOUT_TIME));
 
     public ShortcutManager() {
         for (ShortcutDefinition definition : DEFINITIONS) {
