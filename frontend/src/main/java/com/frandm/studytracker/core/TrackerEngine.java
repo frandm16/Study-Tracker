@@ -27,6 +27,7 @@ public class TrackerEngine {
     //endregion
 
     private String currentTheme = "primer-dark";
+    private String currentFont = "sf-pro";
     private String backgroundVideoSource = "";
 
     private int secondsRemaining;
@@ -104,7 +105,7 @@ public class TrackerEngine {
         if (onTick != null) onTick.run();
         if (onStateChange != null) onStateChange.run();
     }
-    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int masterVolume, int alarmVolume, int notificationVolume, int inWidthStats, int uiSize, Mode mode, int countdownMins, String currentTheme, int notificationDuration, boolean enableToastNotifications) {
+    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int masterVolume, int alarmVolume, int notificationVolume, int inWidthStats, int uiSize, Mode mode, int countdownMins, String currentTheme, String currentFont, int notificationDuration, boolean enableToastNotifications) {
         this.workMins = w;
         this.shortMins = s;
         this.longMins = l;
@@ -121,6 +122,7 @@ public class TrackerEngine {
         this.notificationVolume = notificationVolume;
 
         this.currentTheme = currentTheme;
+        this.currentFont = currentFont;
 
         this.notificationDuration = notificationDuration;
         this.enableToastNotifications = enableToastNotifications;
@@ -220,6 +222,7 @@ public class TrackerEngine {
         this.uiSize = 55;
         this.CountdownMins = 10;
         this.currentTheme = "primer-dark";
+        this.currentFont = "sf-pro";
 
         this.notificationSoundSuccess = "";
         this.notificationSoundError = "";
@@ -241,6 +244,7 @@ public class TrackerEngine {
     public void setWidthStats(int widthStats) {this.widthStats = widthStats;}
     public void setUiSize(int uiSize) { this.uiSize = uiSize; }
     public void setCurrentTheme(String currentTheme) { this.currentTheme = currentTheme;}
+    public void setCurrentFont(String currentFont) { this.currentFont = currentFont; }
     public void setMode(Mode mode) {
         stop();
         this.currentMode = mode;
@@ -311,6 +315,7 @@ public class TrackerEngine {
     public Mode getCurrentMode() { return currentMode; }
 
     public String getCurrentTheme() {return currentTheme; }
+    public String getCurrentFont() { return currentFont; }
     public String getBackgroundVideoSource() { return backgroundVideoSource; }
 
     public int getMasterVolume() {return masterVolume;}

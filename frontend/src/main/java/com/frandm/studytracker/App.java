@@ -29,7 +29,8 @@ public class App extends Application {
         Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
         Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/SF-Pro-Display-Regular.otf"), 12);
-        Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/SF-Pro-Display-Bold.otf"), 12);
+        Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/Excalifont-Regular.otf"), 12);
+        Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/SpaceGrotesk-Regular.ttf"), 12);
 
         String os = System.getProperty("os.name").toLowerCase();
         boolean isWindows = os.contains("win");

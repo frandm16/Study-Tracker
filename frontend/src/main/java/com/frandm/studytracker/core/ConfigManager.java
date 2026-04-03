@@ -40,6 +40,7 @@ public class ConfigManager {
         props.setProperty("currentMode", engine.getCurrentMode().name());
         props.setProperty("countdownMins", String.valueOf(engine.getCountdownMins()));
         props.setProperty("theme", String.valueOf(engine.getCurrentTheme()));
+        props.setProperty("uiFont", String.valueOf(engine.getCurrentFont()));
         props.setProperty("backgroundVideoSource", String.valueOf(engine.getBackgroundVideoSource()));
         props.setProperty("notificationDuration", String.valueOf(engine.getNotificationDuration()));
         props.setProperty("enableToastNotifications", String.valueOf(engine.isEnableToastNotifications()));
@@ -87,6 +88,7 @@ public class ConfigManager {
                     TrackerEngine.Mode.valueOf(props.getProperty("currentMode", String.valueOf(engine.getCurrentMode()))),
                     Integer.parseInt(props.getProperty("countdownMins", String.valueOf(engine.getCountdownMins()))),
                     props.getProperty("theme", String.valueOf(engine.getCurrentTheme())),
+                    props.getProperty("uiFont", String.valueOf(engine.getCurrentFont())),
                     Integer.parseInt(props.getProperty("notificationDuration", String.valueOf(engine.getNotificationDuration()))),
                     Boolean.parseBoolean(props.getProperty("enableToastNotifications", String.valueOf(engine.isEnableToastNotifications())))
             );

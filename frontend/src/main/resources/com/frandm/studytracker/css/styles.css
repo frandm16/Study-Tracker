@@ -5,6 +5,18 @@
     -fx-background-color: -color-menu !important;
 }
 
+.root-pane.font-sf-pro {
+    -fx-font-family: "SF Pro Display";
+}
+
+.root-pane.font-excalifont {
+    -fx-font-family: "Excalifont";
+}
+
+.root-pane.font-space-grotesk {
+    -fx-font-family: "Space Grotesk";
+}
+
 .background-video-overlay {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(6, 12, 18, 0.38), rgba(6, 12, 18, 0.62));
 }

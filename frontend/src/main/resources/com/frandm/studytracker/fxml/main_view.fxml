@@ -312,6 +312,14 @@
                             </VBox>
 
                             <VBox spacing="14" styleClass="settings-card">
+                                <Label text="Font" styleClass="settings-card-title"/>
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <Label text="UI Font" styleClass="settings-sub-label"/>
+                                    <ComboBox fx:id="fontComboBox" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                </HBox>
+                            </VBox>
+
+                            <VBox spacing="14" styleClass="settings-card">
                                 <Label text="Theme" styleClass="settings-card-title"/>
                                 <HBox spacing="10" alignment="CENTER_LEFT" fx:id="themeButtonsContainer">
                                     <Button onAction="#handleThemeChange" userData="primer-dark" styleClass="theme-btn">

@@ -2,20 +2,17 @@ package com.frandm.studytracker.controllers;
 
 import atlantafx.base.controls.ProgressSliderSkin;
 import atlantafx.base.controls.ToggleSwitch;
-import atlantafx.base.theme.PrimerDark;
-import atlantafx.base.theme.PrimerLight;
 import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.core.*;
+import com.frandm.studytracker.ui.util.AppearanceManager;
 import com.frandm.studytracker.ui.util.Animations;
 import com.frandm.studytracker.ui.util.UIManager;
 import com.frandm.studytracker.ui.views.FloatingDockView;
 import com.frandm.studytracker.ui.views.dashboard.StatsDashboardView;
 import com.frandm.studytracker.ui.views.logs.LogsView;
 import com.frandm.studytracker.ui.views.planner.PlannerController;
-import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -38,6 +35,7 @@ import java.util.*;
 public class TrackerController {
 
     public static final String PROJECT_VERSION = "v1.3.0";
+
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane;
     @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle,
             confirmOverlay, confirmTagOverlay, plannerOverlayLayer;
@@ -68,6 +66,7 @@ public class TrackerController {
     @FXML public Label notifDurationLabel, appVersionLabel;
 
     @FXML public ComboBox<String> alarmPresetComboBox;
+    @FXML public ComboBox<String> fontComboBox;
     @FXML public TextField customAlarmSoundField;
     @FXML public TextField successSoundField;
     @FXML public TextField errorSoundField;
@@ -80,6 +79,7 @@ public class TrackerController {
     private final TrackerEngine engine = new TrackerEngine();
     private final SetupManager setupManager = new SetupManager(this);
     private final UIManager uiManager = new UIManager();
+    private final AppearanceManager appearanceManager = new AppearanceManager();
     @FXML
     public Label ModeSubnameLabel;
     @FXML
@@ -149,7 +149,8 @@ public class TrackerController {
         // setupGeneratorsDEVELOP();
         // -------------------------------------------
         ConfigManager.load(engine);
-        applyTheme();
+        appearanceManager.bindRoot(rootPane);
+        appearanceManager.applyAll(engine);
         NotificationManager.init(notificationContainer);
         NotificationManager.setEngine(engine);
         new Thread(() -> {
@@ -313,7 +314,28 @@ public class TrackerController {
         colRightStats.percentWidthProperty().bind(widthSlider.valueProperty().multiply(-1).add(100).divide(2));
         
         setupBackgroundSelector();
-        updateThemeSelection();
+        setupFontSelector();
+        appearanceManager.updateThemeSelection(themeButtonsContainer, engine.getCurrentTheme());
+    }
+
+    private void setupFontSelector() {
+        if (fontComboBox == null) return;
+
+        fontComboBox.getItems().setAll(appearanceManager.getFontLabels());
+        fontComboBox.getSelectionModel().select(appearanceManager.getFontLabel(engine.getCurrentFont()));
+        fontComboBox.valueProperty().addListener((_, _, newValue) -> {
+            if (newValue == null) {
+                return;
+            }
+
+            String fontKey = appearanceManager.getFontKeyForLabel(newValue);
+            if (fontKey.equals(engine.getCurrentFont())) {
+                return;
+            }
+
+            engine.setCurrentFont(fontKey);
+            appearanceManager.applyFont(fontKey);
+        });
     }
 
     private void setupBackgroundSelector() {
@@ -518,6 +540,7 @@ public class TrackerController {
                 engine.getCurrentMode(),
                 (int)countdownSlider.getValue(),
                 engine.getCurrentTheme(),
+                engine.getCurrentFont(),
                 (int)notifDurationSlider.getValue(),
                 enableToastToggle != null && enableToastToggle.isSelected()
         );
@@ -657,7 +680,12 @@ public class TrackerController {
         engine.setMode(TrackerEngine.Mode.POMODORO);
 
         engine.setCurrentTheme("primer-dark");
-        applyTheme();
+        engine.setCurrentFont("sf-pro");
+        appearanceManager.applyAll(engine);
+        appearanceManager.updateThemeSelection(themeButtonsContainer, engine.getCurrentTheme());
+        if (fontComboBox != null) {
+            fontComboBox.getSelectionModel().select(appearanceManager.getFontLabel(engine.getCurrentFont()));
+        }
 
         SoundManager.setSelectedAlarmPreset(SoundManager.AlarmSound.BIRDS);
         SoundManager.setCustomAlarmSound("");
@@ -829,22 +857,6 @@ public class TrackerController {
         }
     }
 
-    private void applyTheme() {
-        rootPane.getStyleClass().removeAll(
-                "primer-dark", "primer-light", "primer-electric-blue",
-                "primer-cappuccino", "primer-sunset", "primer-midnight", "primer-custom"
-        );
-
-        if (engine.getCurrentTheme().equals("primer-light")) {
-            Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
-        } else {
-            Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
-        }
-
-        rootPane.getStyleClass().add(engine.getCurrentTheme());
-    }
-
-
     //endregion
 
     //region Setup
@@ -924,23 +936,8 @@ public class TrackerController {
         String theme = (String) clicked.getUserData();
         engine.setCurrentTheme(theme);
         updateEngineSettings();
-        applyTheme();
-        updateThemeSelection();
-    }
-
-    private void updateThemeSelection() {
-        if (themeButtonsContainer == null) return;
-        String currentTheme = engine.getCurrentTheme();
-        for (Node node : themeButtonsContainer.getChildren()) {
-            if (node instanceof Button btn) {
-                String theme = (String) btn.getUserData();
-                if (theme != null && theme.equals(currentTheme)) {
-                    btn.getStyleClass().add("theme-btn-selected");
-                } else {
-                    btn.getStyleClass().remove("theme-btn-selected");
-                }
-            }
-        }
+        appearanceManager.applyTheme(theme);
+        appearanceManager.updateThemeSelection(themeButtonsContainer, theme);
     }
 
     private VBox createTodaySchedulesList() {
