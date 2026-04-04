@@ -7,7 +7,7 @@ import java.util.Properties;
 
 public class ConfigManager {
 
-    private static final String FOLDER_NAME = ".StudyTracker";
+    private static final String FOLDER_NAME = ".StudyZen";
     private static final String FILE_NAME = "settings.properties";
     public static final String API_URL_KEY = "apiUrl";
     public static final String WELCOME_GUIDE_COMPLETED_KEY = "welcomeGuideCompleted";
@@ -49,7 +49,7 @@ public class ConfigManager {
         File configFile = getConfigFile();
 
         try (OutputStream out = new FileOutputStream(configFile)) {
-            props.store(out, "Study Tracker Settings");
+            props.store(out, "StudyZen Settings");
         } catch (IOException e) {
             Logger.error("Error ConfigManager.storeProperties", e);
         }
