@@ -150,7 +150,7 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.frandm.pomodoro.Launcher</mainClass>
+                                    <mainClass>com.frandm.studytracker.Launcher</mainClass>
                                 </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
@@ -187,8 +187,8 @@
                             <input>target</input>
                             <appVersion>${project.version}</appVersion>
                             <mainJar>${project.build.finalName}.jar</mainJar>
-                            <mainClass>com.frandm.pomodoro.Launcher</mainClass>
-                            <icon>src/main/resources/com/frandm/pomodoro/images/STlogo.ico</icon>
+                            <mainClass>com.frandm.studytracker.Launcher</mainClass>
+                            <icon>src/main/resources/com/frandm/studytracker/images/SZlogo.ico</icon>
                             <vendor>Fran Dorado</vendor>
                             <winMenuGroup>StudyTracker</winMenuGroup>
                             <winDirChooser>true</winDirChooser>
@@ -209,8 +209,8 @@
                             <input>target</input>
                             <appVersion>${project.version}</appVersion>
                             <mainJar>${project.build.finalName}.jar</mainJar>
-                            <mainClass>com.frandm.pomodoro.Launcher</mainClass>
-                            <icon>src/main/resources/com/frandm/pomodoro/images/STlogo.ico</icon>
+                            <mainClass>com.frandm.studytracker.Launcher</mainClass>
+                            <icon>src/main/resources/com/frandm/studytracker/images/SZlogo.ico</icon>
                             <vendor>Fran Dorado</vendor>
                         </configuration>
                     </execution>
