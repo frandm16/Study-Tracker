@@ -165,6 +165,283 @@
     </HBox>
 
 
+
+
+
+    <GridPane fx:id="connectionSetupPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="25" />
+            <ColumnConstraints percentWidth="50" />
+            <ColumnConstraints percentWidth="25" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="20" />
+            <RowConstraints percentHeight="60" />
+            <RowConstraints percentHeight="20" />
+        </rowConstraints>
+        <Region styleClass="connection-setup-overlay" GridPane.columnSpan="3" GridPane.rowSpan="3">
+            <effect><GaussianBlur radius="15" /></effect>
+        </Region>
+        <StackPane fx:id="connectionSetupBox" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <VBox spacing="20" styleClass="connection-setup-card" maxWidth="700">
+                <HBox alignment="CENTER_LEFT" spacing="16">
+                    <StackPane styleClass="connection-setup-icon-shell">
+                        <FontIcon iconLiteral="mdi2s-server-network-outline" styleClass="connection-setup-icon"/>
+                    </StackPane>
+                    <VBox spacing="6">
+                        <Label text="Connect Your StudyZen Backend" styleClass="connection-setup-title" />
+                        <Label text="Set the server URL once and the app will remember it for future launches."
+                               wrapText="true" styleClass="connection-setup-subtitle"/>
+                    </VBox>
+                </HBox>
+
+                <HBox spacing="18" styleClass="connection-setup-body">
+                    <VBox spacing="14" prefWidth="220" styleClass="connection-setup-side">
+                        <Label text="Quick Start" styleClass="connection-setup-side-title"/>
+                        <VBox spacing="10" styleClass="connection-setup-step">
+                            <Label text="1" styleClass="connection-step-badge"/>
+                            <Label text="Start your backend with Docker Compose." wrapText="true" styleClass="connection-step-text"/>
+                        </VBox>
+                        <VBox spacing="10" styleClass="connection-setup-step">
+                            <Label text="2" styleClass="connection-step-badge"/>
+                            <Label text="Use the default local server if you are running everything on this machine." wrapText="true" styleClass="connection-step-text"/>
+                        </VBox>
+                        <VBox spacing="10" styleClass="connection-setup-step">
+                            <Label text="3" styleClass="connection-step-badge"/>
+                            <Label text="Test the connection, then save and continue." wrapText="true" styleClass="connection-step-text"/>
+                        </VBox>
+                    </VBox>
+
+                    <VBox spacing="16" HBox.hgrow="ALWAYS">
+                        <VBox spacing="12" styleClass="connection-setup-form-card">
+                            <Label text="Server URL" styleClass="connection-setup-form-title" />
+                            <Label text="Default local URL: http://localhost:8080/api" wrapText="true" styleClass="connection-setup-form-help"/>
+                            <TextField fx:id="connectionSetupUrlField" promptText="http://localhost:8080/api" styleClass="connection-setup-input" />
+                            <Label fx:id="connectionSetupStatusLabel" text="Use the default local server or enter a custom URL."
+                                   wrapText="true" styleClass="connection-setup-status"/>
+                        </VBox>
+
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Button text="Use Default Local Server" onAction="#handleUseDefaultServerUrl" styleClass="button-secondary, connection-secondary-btn"/>
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Button text="Test Connection" onAction="#handleTestConnectionSetup" styleClass="button-secondary, connection-secondary-btn"/>
+                            <Button text="Save and Continue" onAction="#handleSaveAndContinueConnectionSetup" styleClass="button-main, connection-primary-btn"/>
+                        </HBox>
+                    </VBox>
+                </HBox>
+            </VBox>
+        </StackPane>
+    </GridPane>
+
+    <GridPane fx:id="setupPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="20" />
+            <ColumnConstraints percentWidth="60" />
+            <ColumnConstraints percentWidth="20" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="10" />
+            <RowConstraints percentHeight="80" />
+            <RowConstraints percentHeight="10" />
+        </rowConstraints>
+        <Region onMouseClicked="#toggleSetup" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3"><effect><GaussianBlur radius="15" /></effect></Region>
+        <StackPane fx:id="setupBox" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <HBox spacing="20" styleClass="setup-main-box" >
+                <VBox spacing="10" prefWidth="250" >
+                    <Label text="Tags" alignment="CENTER" styleClass="setup-section-title" />
+                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="setup-scroll">
+                        <VBox fx:id="tagsListContainer" spacing="5" />
+                    </ScrollPane>
+                    <Separator styleClass="separator-setup" />
+                    <TextField fx:id="tagNameInput" styleClass="search-input" promptText="New Tag Name" />
+                    <ColorPicker fx:id="tagColorInput" styleClass="search-input" maxWidth="Infinity" />
+                    <Button text="Add Tag" onAction="#handleAddNewTag" maxWidth="Infinity" styleClass="button-secondary" />
+                </VBox>
+
+                <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="separator-setup-vertical">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Search Tasks" styleClass="setup-section-title" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button maxWidth="-Infinity" maxHeight="-Infinity" text="✕" onAction="#toggleSetup" styleClass="close-button" />
+                    </HBox>
+                    <TextField fx:id="fuzzySearchInput" promptText="Type to search..." styleClass="search-input" />
+                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="setup-scroll">
+                        <VBox fx:id="fuzzyResultsContainer" spacing="8" />
+                    </ScrollPane>
+
+                    <VBox spacing="10" styleClass="selection-preview-box">
+                        <Label fx:id="selectedNameLabel" text="Nothing selected" styleClass="selection-label" />
+                            </VBox>
+
+                        </VBox>
+            </HBox>
+        </StackPane>
+    </GridPane>
+
+    <GridPane fx:id="summaryPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="35" />
+            <ColumnConstraints percentWidth="30" />
+            <ColumnConstraints percentWidth="35" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="20" />
+            <RowConstraints percentHeight="60" />
+            <RowConstraints percentHeight="20" />
+        </rowConstraints>
+        <Region onMouseClicked="#toggleSummary" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3"><effect><GaussianBlur radius="15" /></effect></Region>
+        <StackPane fx:id="summaryBox" styleClass="summaryStackPane" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <VBox  spacing="40" >
+                <padding><Insets top="30" right="30" bottom="30" left="30"/></padding>
+                <VBox alignment="CENTER">
+                    <HBox>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button maxWidth="-Infinity" maxHeight="-Infinity" text="✕" onAction="#toggleSummary" styleClass="close-button" />
+                    </HBox>
+                    <Label text="Session Finished" styleClass="summaryTitle" />
+                </VBox>
+
+                <VBox spacing="8">
+                    <padding><Insets right="50" left="50"/></padding>
+                    <Label text="Title" styleClass="section-label" />
+                    <TextField fx:id="summaryTitle" styleClass="search-input" />
+                </VBox>
+
+                <VBox spacing="8">
+                    <padding><Insets right="50" left="50"/></padding>
+                    <Label text="Description" styleClass="section-label" />
+                    <TextArea fx:id="summaryDesc" prefHeight="250" wrapText="true" />
+                </VBox>
+
+                <VBox spacing="10" alignment="CENTER">
+                    <padding><Insets top="15"/></padding>
+                    <HBox fx:id="starsContainer" spacing="10" alignment="CENTER" />
+                </VBox>
+
+
+                <HBox spacing="15" alignment="CENTER">
+                    <Button text="Save Session" onAction="#handleSaveSummary" styleClass="button-main" />
+                    <Button onAction="#handleDiscardSummary" style="-fx-background-color: transparent; -fx-cursor: hand">
+                        <graphic>
+                            <FontIcon styleClass="trashIcon"/>
+                        </graphic>
+                        <tooltip>
+                            <Tooltip text="Delete Session" showDelay="250ms" />
+                        </tooltip>
+                    </Button>
+                </HBox>
+            </VBox>
+        </StackPane>
+    </GridPane>
+
+    <StackPane fx:id="confirmOverlay" visible="false" managed="false" >
+        <Region  onMouseClicked="#toggleConfirmDelete" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3"><effect><GaussianBlur radius="15" /></effect></Region>
+        <VBox fx:id="confirmBox" spacing="25" alignment="CENTER" maxWidth="350" maxHeight="200"
+              styleClass="confirm-dialog-card">
+            <padding><Insets bottom="30" left="30" right="30" top="30" /></padding>
+
+            <VBox spacing="10" alignment="CENTER">
+                <Label text="Delete Session" styleClass="confirm-title" />
+                <Label text="This action cannot be undone and the session will be permanently lost."
+                       wrapText="true" textAlignment="CENTER" styleClass="confirm-message" />
+            </VBox>
+
+            <HBox spacing="15" alignment="CENTER">
+                <Button text="Cancel" onAction="#toggleConfirmDelete" styleClass="btn-cancel" />
+                <Button text="Confirm" onAction="#onConfirmDeleteClick"  styleClass="btn-confirm-delete" />
+            </HBox>
+        </VBox>
+    </StackPane>
+
+    <StackPane fx:id="confirmTagOverlay" visible="false" managed="false" >
+        <Region  onMouseClicked="#closeConfirmDeleteTag" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3"><effect><GaussianBlur radius="15" /></effect></Region>
+        <VBox fx:id="confirmTagBox" spacing="25" alignment="CENTER" maxWidth="350" maxHeight="200"
+              styleClass="confirm-dialog-card">
+            <padding><Insets bottom="30" left="30" right="30" top="30" /></padding>
+
+            <VBox spacing="10" alignment="CENTER">
+                <Label text="Delete Tag" styleClass="confirm-title" />
+                <Label text="This action cannot be undone and the tag will be permanently lost and all his sessions, tasks and scheduled sessions."
+                       wrapText="true" textAlignment="CENTER" styleClass="confirm-message" />
+            </VBox>
+
+            <HBox spacing="15" alignment="CENTER">
+                <Button text="Cancel" onAction="#closeConfirmDeleteTag" styleClass="btn-cancel" />
+                <Button text="Confirm" onAction="#onConfirmDeleteTagClick"  styleClass="btn-confirm-delete" />
+            </HBox>
+        </VBox>
+    </StackPane>
+
+    <GridPane fx:id="editSessionPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="35" />
+            <ColumnConstraints percentWidth="30" />
+            <ColumnConstraints percentWidth="35" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="10" />
+            <RowConstraints percentHeight="80" />
+            <RowConstraints percentHeight="10" />
+        </rowConstraints>
+
+        <Region onMouseClicked="#toggleEditSession" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3">
+            <effect><GaussianBlur radius="15" /></effect>
+        </Region>
+
+        <StackPane fx:id="editSessionBox" styleClass="summaryStackPane" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <VBox spacing="25">
+                <padding><Insets top="30" right="40" bottom="30" left="40"/></padding>
+
+                <VBox alignment="CENTER">
+                    <HBox>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button text="✕" onAction="#toggleEditSession" styleClass="close-button" />
+                    </HBox>
+                    <Label text="Edit Session" styleClass="summaryTitle" />
+                </VBox>
+
+                <VBox spacing="15">
+                    <HBox spacing="10">
+                        <VBox HBox.hgrow="ALWAYS" spacing="5">
+                            <Label text="Tag" styleClass="section-label" />
+                            <ComboBox fx:id="editTagCombo" maxWidth="Infinity" styleClass="search-input" />
+                        </VBox>
+                        <VBox HBox.hgrow="ALWAYS" spacing="5">
+                            <Label text="Task" styleClass="section-label" />
+                            <ComboBox fx:id="editTaskCombo" maxWidth="Infinity" styleClass="search-input" />
+                        </VBox>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="8">
+                    <Label text="Title" styleClass="section-label" />
+                    <TextField fx:id="editTitleField" styleClass="search-input" />
+                </VBox>
+
+                <VBox spacing="8">
+                    <Label text="Description" styleClass="section-label" />
+                    <TextArea fx:id="editDescArea" prefHeight="200" wrapText="true" />
+                </VBox>
+
+                <VBox spacing="10" alignment="CENTER">
+                    <HBox fx:id="editStarsContainer" spacing="10" alignment="CENTER"  />
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS" />
+
+                <HBox spacing="20" alignment="CENTER">
+                    <Button text="Update Session" onAction="#handleEditSession" styleClass="button-main" />
+                    <Button text="Cancel" onAction="#toggleEditSession" style="-fx-background-color: transparent; -fx-text-fill: -text-muted; -fx-cursor: hand;" />
+                </HBox>
+            </VBox>
+        </StackPane>
+    </GridPane>
+
+    <StackPane fx:id="plannerOverlayLayer"
+               visible="false"
+               managed="false"
+               StackPane.alignment="CENTER" />
+
     <GridPane fx:id="settingsPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
         <columnConstraints>
             <ColumnConstraints percentWidth="25" />
@@ -620,280 +897,6 @@
             </ScrollPane>
         </VBox>
     </GridPane>
-
-    <GridPane fx:id="connectionSetupPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
-        <columnConstraints>
-            <ColumnConstraints percentWidth="25" />
-            <ColumnConstraints percentWidth="50" />
-            <ColumnConstraints percentWidth="25" />
-        </columnConstraints>
-        <rowConstraints>
-            <RowConstraints percentHeight="20" />
-            <RowConstraints percentHeight="60" />
-            <RowConstraints percentHeight="20" />
-        </rowConstraints>
-        <Region styleClass="connection-setup-overlay" GridPane.columnSpan="3" GridPane.rowSpan="3">
-            <effect><GaussianBlur radius="15" /></effect>
-        </Region>
-        <StackPane fx:id="connectionSetupBox" GridPane.columnIndex="1" GridPane.rowIndex="1">
-            <VBox spacing="20" styleClass="connection-setup-card" maxWidth="700">
-                <HBox alignment="CENTER_LEFT" spacing="16">
-                    <StackPane styleClass="connection-setup-icon-shell">
-                        <FontIcon iconLiteral="mdi2s-server-network-outline" styleClass="connection-setup-icon"/>
-                    </StackPane>
-                    <VBox spacing="6">
-                        <Label text="Connect Your StudyZen Backend" styleClass="connection-setup-title" />
-                        <Label text="Set the server URL once and the app will remember it for future launches."
-                               wrapText="true" styleClass="connection-setup-subtitle"/>
-                    </VBox>
-                </HBox>
-
-                <HBox spacing="18" styleClass="connection-setup-body">
-                    <VBox spacing="14" prefWidth="220" styleClass="connection-setup-side">
-                        <Label text="Quick Start" styleClass="connection-setup-side-title"/>
-                        <VBox spacing="10" styleClass="connection-setup-step">
-                            <Label text="1" styleClass="connection-step-badge"/>
-                            <Label text="Start your backend with Docker Compose." wrapText="true" styleClass="connection-step-text"/>
-                        </VBox>
-                        <VBox spacing="10" styleClass="connection-setup-step">
-                            <Label text="2" styleClass="connection-step-badge"/>
-                            <Label text="Use the default local server if you are running everything on this machine." wrapText="true" styleClass="connection-step-text"/>
-                        </VBox>
-                        <VBox spacing="10" styleClass="connection-setup-step">
-                            <Label text="3" styleClass="connection-step-badge"/>
-                            <Label text="Test the connection, then save and continue." wrapText="true" styleClass="connection-step-text"/>
-                        </VBox>
-                    </VBox>
-
-                    <VBox spacing="16" HBox.hgrow="ALWAYS">
-                        <VBox spacing="12" styleClass="connection-setup-form-card">
-                            <Label text="Server URL" styleClass="connection-setup-form-title" />
-                            <Label text="Default local URL: http://localhost:8080/api" wrapText="true" styleClass="connection-setup-form-help"/>
-                            <TextField fx:id="connectionSetupUrlField" promptText="http://localhost:8080/api" styleClass="connection-setup-input" />
-                            <Label fx:id="connectionSetupStatusLabel" text="Use the default local server or enter a custom URL."
-                                   wrapText="true" styleClass="connection-setup-status"/>
-                        </VBox>
-
-                        <HBox spacing="12" alignment="CENTER_LEFT">
-                            <Button text="Use Default Local Server" onAction="#handleUseDefaultServerUrl" styleClass="button-secondary, connection-secondary-btn"/>
-                            <Region HBox.hgrow="ALWAYS" />
-                            <Button text="Test Connection" onAction="#handleTestConnectionSetup" styleClass="button-secondary, connection-secondary-btn"/>
-                            <Button text="Save and Continue" onAction="#handleSaveAndContinueConnectionSetup" styleClass="button-main, connection-primary-btn"/>
-                        </HBox>
-                    </VBox>
-                </HBox>
-            </VBox>
-        </StackPane>
-    </GridPane>
-
-    <GridPane fx:id="setupPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
-        <columnConstraints>
-            <ColumnConstraints percentWidth="20" />
-            <ColumnConstraints percentWidth="60" />
-            <ColumnConstraints percentWidth="20" />
-        </columnConstraints>
-        <rowConstraints>
-            <RowConstraints percentHeight="10" />
-            <RowConstraints percentHeight="80" />
-            <RowConstraints percentHeight="10" />
-        </rowConstraints>
-        <Region onMouseClicked="#toggleSetup" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3"><effect><GaussianBlur radius="15" /></effect></Region>
-        <StackPane fx:id="setupBox" GridPane.columnIndex="1" GridPane.rowIndex="1">
-            <HBox spacing="20" styleClass="setup-main-box" >
-                <VBox spacing="10" prefWidth="250" >
-                    <Label text="Tags" alignment="CENTER" styleClass="setup-section-title" />
-                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="setup-scroll">
-                        <VBox fx:id="tagsListContainer" spacing="5" />
-                    </ScrollPane>
-                    <Separator styleClass="separator-setup" />
-                    <TextField fx:id="tagNameInput" styleClass="search-input" promptText="New Tag Name" />
-                    <ColorPicker fx:id="tagColorInput" styleClass="search-input" maxWidth="Infinity" />
-                    <Button text="Add Tag" onAction="#handleAddNewTag" maxWidth="Infinity" styleClass="button-secondary" />
-                </VBox>
-
-                <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="separator-setup-vertical">
-                    <HBox alignment="CENTER_LEFT">
-                        <Label text="Search Tasks" styleClass="setup-section-title" />
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Button maxWidth="-Infinity" maxHeight="-Infinity" text="✕" onAction="#toggleSetup" styleClass="close-button" />
-                    </HBox>
-                    <TextField fx:id="fuzzySearchInput" promptText="Type to search..." styleClass="search-input" />
-                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="setup-scroll">
-                        <VBox fx:id="fuzzyResultsContainer" spacing="8" />
-                    </ScrollPane>
-
-                    <VBox spacing="10" styleClass="selection-preview-box">
-                        <Label fx:id="selectedNameLabel" text="Nothing selected" styleClass="selection-label" />
-                            </VBox>
-
-                        </VBox>
-            </HBox>
-        </StackPane>
-    </GridPane>
-
-    <GridPane fx:id="summaryPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
-        <columnConstraints>
-            <ColumnConstraints percentWidth="35" />
-            <ColumnConstraints percentWidth="30" />
-            <ColumnConstraints percentWidth="35" />
-        </columnConstraints>
-        <rowConstraints>
-            <RowConstraints percentHeight="20" />
-            <RowConstraints percentHeight="60" />
-            <RowConstraints percentHeight="20" />
-        </rowConstraints>
-        <Region onMouseClicked="#toggleSummary" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3"><effect><GaussianBlur radius="15" /></effect></Region>
-        <StackPane fx:id="summaryBox" styleClass="summaryStackPane" GridPane.columnIndex="1" GridPane.rowIndex="1">
-            <VBox  spacing="40" >
-                <padding><Insets top="30" right="30" bottom="30" left="30"/></padding>
-                <VBox alignment="CENTER">
-                    <HBox>
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Button maxWidth="-Infinity" maxHeight="-Infinity" text="✕" onAction="#toggleSummary" styleClass="close-button" />
-                    </HBox>
-                    <Label text="Session Finished" styleClass="summaryTitle" />
-                </VBox>
-
-                <VBox spacing="8">
-                    <padding><Insets right="50" left="50"/></padding>
-                    <Label text="Title" styleClass="section-label" />
-                    <TextField fx:id="summaryTitle" styleClass="search-input" />
-                </VBox>
-
-                <VBox spacing="8">
-                    <padding><Insets right="50" left="50"/></padding>
-                    <Label text="Description" styleClass="section-label" />
-                    <TextArea fx:id="summaryDesc" prefHeight="250" wrapText="true" />
-                </VBox>
-
-                <VBox spacing="10" alignment="CENTER">
-                    <padding><Insets top="15"/></padding>
-                    <HBox fx:id="starsContainer" spacing="10" alignment="CENTER" />
-                </VBox>
-
-
-                <HBox spacing="15" alignment="CENTER">
-                    <Button text="Save Session" onAction="#handleSaveSummary" styleClass="button-main" />
-                    <Button onAction="#handleDiscardSummary" style="-fx-background-color: transparent; -fx-cursor: hand">
-                        <graphic>
-                            <FontIcon styleClass="trashIcon"/>
-                        </graphic>
-                        <tooltip>
-                            <Tooltip text="Delete Session" showDelay="250ms" />
-                        </tooltip>
-                    </Button>
-                </HBox>
-            </VBox>
-        </StackPane>
-    </GridPane>
-
-    <StackPane fx:id="confirmOverlay" visible="false" managed="false" >
-        <Region  onMouseClicked="#toggleConfirmDelete" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3"><effect><GaussianBlur radius="15" /></effect></Region>
-        <VBox fx:id="confirmBox" spacing="25" alignment="CENTER" maxWidth="350" maxHeight="200"
-              styleClass="confirm-dialog-card">
-            <padding><Insets bottom="30" left="30" right="30" top="30" /></padding>
-
-            <VBox spacing="10" alignment="CENTER">
-                <Label text="Delete Session" styleClass="confirm-title" />
-                <Label text="This action cannot be undone and the session will be permanently lost."
-                       wrapText="true" textAlignment="CENTER" styleClass="confirm-message" />
-            </VBox>
-
-            <HBox spacing="15" alignment="CENTER">
-                <Button text="Cancel" onAction="#toggleConfirmDelete" styleClass="btn-cancel" />
-                <Button text="Confirm" onAction="#onConfirmDeleteClick"  styleClass="btn-confirm-delete" />
-            </HBox>
-        </VBox>
-    </StackPane>
-
-    <StackPane fx:id="confirmTagOverlay" visible="false" managed="false" >
-        <Region  onMouseClicked="#closeConfirmDeleteTag" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3"><effect><GaussianBlur radius="15" /></effect></Region>
-        <VBox fx:id="confirmTagBox" spacing="25" alignment="CENTER" maxWidth="350" maxHeight="200"
-              styleClass="confirm-dialog-card">
-            <padding><Insets bottom="30" left="30" right="30" top="30" /></padding>
-
-            <VBox spacing="10" alignment="CENTER">
-                <Label text="Delete Tag" styleClass="confirm-title" />
-                <Label text="This action cannot be undone and the tag will be permanently lost and all his sessions, tasks and scheduled sessions."
-                       wrapText="true" textAlignment="CENTER" styleClass="confirm-message" />
-            </VBox>
-
-            <HBox spacing="15" alignment="CENTER">
-                <Button text="Cancel" onAction="#closeConfirmDeleteTag" styleClass="btn-cancel" />
-                <Button text="Confirm" onAction="#onConfirmDeleteTagClick"  styleClass="btn-confirm-delete" />
-            </HBox>
-        </VBox>
-    </StackPane>
-
-    <GridPane fx:id="editSessionPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
-        <columnConstraints>
-            <ColumnConstraints percentWidth="35" />
-            <ColumnConstraints percentWidth="30" />
-            <ColumnConstraints percentWidth="35" />
-        </columnConstraints>
-        <rowConstraints>
-            <RowConstraints percentHeight="10" />
-            <RowConstraints percentHeight="80" />
-            <RowConstraints percentHeight="10" />
-        </rowConstraints>
-
-        <Region onMouseClicked="#toggleEditSession" style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3">
-            <effect><GaussianBlur radius="15" /></effect>
-        </Region>
-
-        <StackPane fx:id="editSessionBox" styleClass="summaryStackPane" GridPane.columnIndex="1" GridPane.rowIndex="1">
-            <VBox spacing="25">
-                <padding><Insets top="30" right="40" bottom="30" left="40"/></padding>
-
-                <VBox alignment="CENTER">
-                    <HBox>
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Button text="✕" onAction="#toggleEditSession" styleClass="close-button" />
-                    </HBox>
-                    <Label text="Edit Session" styleClass="summaryTitle" />
-                </VBox>
-
-                <VBox spacing="15">
-                    <HBox spacing="10">
-                        <VBox HBox.hgrow="ALWAYS" spacing="5">
-                            <Label text="Tag" styleClass="section-label" />
-                            <ComboBox fx:id="editTagCombo" maxWidth="Infinity" styleClass="search-input" />
-                        </VBox>
-                        <VBox HBox.hgrow="ALWAYS" spacing="5">
-                            <Label text="Task" styleClass="section-label" />
-                            <ComboBox fx:id="editTaskCombo" maxWidth="Infinity" styleClass="search-input" />
-                        </VBox>
-                    </HBox>
-                </VBox>
-
-                <VBox spacing="8">
-                    <Label text="Title" styleClass="section-label" />
-                    <TextField fx:id="editTitleField" styleClass="search-input" />
-                </VBox>
-
-                <VBox spacing="8">
-                    <Label text="Description" styleClass="section-label" />
-                    <TextArea fx:id="editDescArea" prefHeight="200" wrapText="true" />
-                </VBox>
-
-                <VBox spacing="10" alignment="CENTER">
-                    <HBox fx:id="editStarsContainer" spacing="10" alignment="CENTER"  />
-                </VBox>
-
-                <Region VBox.vgrow="ALWAYS" />
-
-                <HBox spacing="20" alignment="CENTER">
-                    <Button text="Update Session" onAction="#handleEditSession" styleClass="button-main" />
-                    <Button text="Cancel" onAction="#toggleEditSession" style="-fx-background-color: transparent; -fx-text-fill: -text-muted; -fx-cursor: hand;" />
-                </HBox>
-            </VBox>
-        </StackPane>
-    </GridPane>
-
-    <StackPane fx:id="plannerOverlayLayer"
-               visible="false"
-               managed="false"
-               StackPane.alignment="CENTER" />
 
     <VBox fx:id="notificationContainer"
           mouseTransparent="true"

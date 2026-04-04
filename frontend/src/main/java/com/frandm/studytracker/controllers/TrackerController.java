@@ -34,7 +34,7 @@ import java.util.*;
 
 public class TrackerController {
 
-    public static final String PROJECT_VERSION = "v1.3.0";
+    public static final String PROJECT_VERSION = "v2.0.0";
 
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane, shortcutMenuPane, connectionSetupPane;
     @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, connectionSetupBox,

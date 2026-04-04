@@ -2232,6 +2232,10 @@
 /* endregion */
 /* region --- notifications --- */
 
+#notificationContainer{
+    -fx-padding: 40 0 0 0;
+}
+
 .notification-toast {
     -fx-background-color: -color-bg-subtle;
     -fx-border-color: -color-border-subtle-light;
